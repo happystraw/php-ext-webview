@@ -142,12 +142,20 @@ final class Webview
     /**
      * Bind a PHP function to a JavaScript function
      *
+     * callback must be a callable with the following signature:
+     * params:
+     * - id:  a string identifier for the binding call.
+     * - req: a JSON-encoded string containing the arguments passed from JavaScript.
+     * returns: optional, either a JSON-encoded string to be returned to JavaScript.
+     *          see return() for details.
+     *
      * @param string                                                                        $name     Name of the JavaScript function
      * @param callable(string $id,string $req):string|callable(string $id,string $req):void $callback PHP callback function
      *
      * @return void
      *
      * @throws WebviewException on failure
+     *
      */
     public function bind(string $name, callable $callback): void {}
 
@@ -166,12 +174,12 @@ final class Webview
      * Responds to a binding call from the JS side.
      *
      * @param string $id     The identifier of the binding call. Pass along the value received
-     *                       in the binding handler (see webview_bind()).
+     *                       in the binding handler (see bind()).
      * @param int    $status A status of zero tells the JS side that the binding call was
      *                       successful; any other value indicates an error.
      * @param string $result The result of the binding call to be returned to the JS side.
      *                       This must either be a valid JSON value or an empty string for
-     *                       the primitive JS value @c undefined.
+     *                       the primitive JS value.
      *
      * @throws WebviewException on failure
      */
@@ -179,10 +187,10 @@ final class Webview
 
     /**
      * Schedules a function to be invoked on the thread with the run/event loop.
-     * Use this function e.g. to interact with the library or native handles.
      *
-     * Notice: use this method in running webview only.
-     * if webview is not running, may cause a php memory leak.
+     * Notice: Use this method in running webview only.
+     * If the webview is not running, a memory leak may occur
+     * when the webview instance is held by a circular reference.
      *
      * @param callable():void $callback The function to invoke
      *
@@ -196,12 +204,15 @@ final class Webview
      * Get the library version information
      *
      * @return array{
-     *      major: int,
-     *      minor: int,
-     *      patch: int,
-     *      version_number: string,
-     *      pre_release: string,
-     *      build_metadata: string
+     *      ext_version: string,
+     *      lib_webview: array{
+     *          major: int,
+     *          minor: int,
+     *          patch: int,
+     *          version_number: string,
+     *          pre_release: string,
+     *          build_metadata: string,
+     *      }
      * } Returns version information
      */
     public static function version(): array {}

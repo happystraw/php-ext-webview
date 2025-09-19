@@ -1,5 +1,6 @@
 /* webview extension for PHP */
 
+#include "zend_API.h"
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -675,18 +676,23 @@ PHP_METHOD(Webview_Webview, dispatch)
 PHP_METHOD(Webview_Webview, version)
 {
     const webview_version_info_t *version_info;
+    zval lib_version;
 
     ZEND_PARSE_PARAMETERS_NONE();
 
     version_info = webview_version();
 
+    array_init(&lib_version);
+    add_assoc_long(&lib_version, "major", version_info->version.major);
+    add_assoc_long(&lib_version, "minor", version_info->version.minor);
+    add_assoc_long(&lib_version, "patch", version_info->version.patch);
+    add_assoc_string(&lib_version, "version_number", version_info->version_number);
+    add_assoc_string(&lib_version, "pre_release", version_info->pre_release);
+    add_assoc_string(&lib_version, "build_metadata", version_info->build_metadata);
+
     array_init(return_value);
-    add_assoc_long(return_value, "major", version_info->version.major);
-    add_assoc_long(return_value, "minor", version_info->version.minor);
-    add_assoc_long(return_value, "patch", version_info->version.patch);
-    add_assoc_string(return_value, "version_number", version_info->version_number);
-    add_assoc_string(return_value, "pre_release", version_info->pre_release);
-    add_assoc_string(return_value, "build_metadata", version_info->build_metadata);
+    add_assoc_string(return_value, "ext_version", PHP_WEBVIEW_VERSION);
+    add_assoc_zval(return_value, "lib_version", &lib_version);
 }
 /* }}} */
 

@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: e6ad41c06e2949190fd4b62cba4f2d81b20c7d56 */
+ * Stub hash: 210fb77f4358af72fc625ec2ad843d67ddbc4212 */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Webview_Webview___construct, 0, 0, 0)
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, debug, _IS_BOOL, 0, "false")

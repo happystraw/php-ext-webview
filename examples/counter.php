@@ -2,6 +2,7 @@
 <?php
 
 use Webview\Webview;
+use Webview\WebviewHint;
 
 $workerChan = new \parallel\Channel();
 $appChan = new \parallel\Channel();
@@ -39,7 +40,7 @@ $thread1->run($worker, [0, $workerChan, $appChan]);
 
 $w = new Webview(TRUE);
 $w->setTitle('Counter');
-// $w->setSize(480, 320, WebviewHint::MIN);
+$w->setSize(480, 320, WebviewHint::FIXED);
 $w->setHtml(file_get_contents(__DIR__ . '/counter.html'));
 $w->bind(
     'count',

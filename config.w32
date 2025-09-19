@@ -1,0 +1,149 @@
+// config.w32 for extension webview
+
+ARG_ENABLE('webview', 'webview support', 'no');
+ARG_WITH('webview-webview2-version', 'WebView2 SDK version', 'auto');
+
+if (PHP_WEBVIEW != 'no') {
+	// Define webview support
+	AC_DEFINE('HAVE_WEBVIEW', 1, 'webview support enabled');
+	AC_DEFINE('WEBVIEW_EDGE', 1, 'Use Windows WebView2 backend');
+
+	if (!configure_module_dirname) {
+		configure_module_dirname = get_define('BUILD_DIR') + "\\ext\\webview";
+	}
+
+	STDOUT.WriteLine("Configuring webview extension for Windows with WebView2...");
+
+	// WebView2 SDK detection with multiple fallback paths
+	var webview2_found = false;
+	var webview2_sdk_path = false;
+	var webview2_lib_path = false;
+
+	// Extended list of possible WebView2 SDK locations
+	var possible_sdk_paths = [
+		configure_module_dirname + "\\deps\\WebView2",
+		"deps\\WebView2",
+		"packages\\Microsoft.Web.WebView2\\build\\native\\include",
+		"..\\packages\\Microsoft.Web.WebView2\\build\\native\\include",
+		get_define('BUILD_DIR') + "\\packages\\Microsoft.Web.WebView2\\build\\native\\include",
+		"C:\\Program Files (x86)\\Microsoft Web WebView2\\build\\native\\include",
+		"C:\\Program Files\\Microsoft Web WebView2\\build\\native\\include"
+	];
+
+	var possible_lib_paths = [
+		configure_module_dirname + "\\deps\\WebView2",
+		"deps\\WebView2",
+		"packages\\Microsoft.Web.WebView2\\build\\native",
+		"..\\packages\\Microsoft.Web.WebView2\\build\\native",
+		get_define('BUILD_DIR') + "\\packages\\Microsoft.Web.WebView2\\build\\native",
+		"C:\\Program Files (x86)\\Microsoft Web WebView2\\build\\native",
+		"C:\\Program Files\\Microsoft Web WebView2\\build\\native"
+	];
+
+	// Search for WebView2 SDK headers
+	for (var i = 0; i < possible_sdk_paths.length; i++) {
+		if (FSO.FolderExists(possible_sdk_paths[i]) || FSO.FileExists(possible_sdk_paths[i] + "\\WebView2.h")) {
+			webview2_sdk_path = possible_sdk_paths[i];
+			STDOUT.WriteLine("Found WebView2 SDK headers at: " + webview2_sdk_path);
+			break;
+		}
+	}
+
+	// Search for WebView2 libraries
+	for (var i = 0; i < possible_lib_paths.length; i++) {
+		if (FSO.FolderExists(possible_lib_paths[i])) {
+			webview2_lib_path = possible_lib_paths[i];
+			STDOUT.WriteLine("Found WebView2 libraries at: " + webview2_lib_path);
+			break;
+		}
+	}
+
+	// Validate WebView2 availability
+	if (!webview2_sdk_path) {
+		ERROR("WebView2 SDK not found. Please install Microsoft.Web.WebView2 NuGet package.");
+		ERROR("Run: nuget install Microsoft.Web.WebView2 -OutputDirectory packages");
+		ERROR("Or place WebView2.h in: deps\\WebView2\\");
+	} else {
+		webview2_found = true;
+	}
+
+	if (webview2_found) {
+		// Add WebView2 include paths
+		ADD_FLAG("CFLAGS_WEBVIEW", "/I " + webview2_sdk_path);
+
+		// Add deps directory for webview.h
+		ADD_FLAG("CFLAGS_WEBVIEW", "/I " + configure_module_dirname + "\\deps");
+		ADD_FLAG("CFLAGS_WEBVIEW", "/I " + configure_module_dirname + "\\deps\\webview");
+
+		// WebView2 library configuration
+		if (webview2_lib_path) {
+			// Determine architecture
+			var arch = X64 ? "x64" : "x86";
+			var lib_arch_path = webview2_lib_path + "\\" + arch;
+
+			STDOUT.WriteLine("Looking for WebView2 libraries in: " + lib_arch_path);
+
+			if (FSO.FolderExists(lib_arch_path)) {
+				ADD_FLAG("LDFLAGS_WEBVIEW", "/LIBPATH:" + lib_arch_path);
+				STDOUT.WriteLine("Added library path: " + lib_arch_path);
+			}
+
+			// Try both static and dynamic WebView2 loader options
+			if (FSO.FileExists(lib_arch_path + "\\WebView2LoaderStatic.lib")) {
+				ADD_FLAG("LIBS_WEBVIEW", "WebView2LoaderStatic.lib");
+				AC_DEFINE('WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL', 1, 'Use built-in WebView2 loader implementation');
+				STDOUT.WriteLine("Using WebView2LoaderStatic.lib");
+			} else if (FSO.FileExists(lib_arch_path + "\\WebView2Loader.lib")) {
+				ADD_FLAG("LIBS_WEBVIEW", "WebView2Loader.lib");
+				STDOUT.WriteLine("Using WebView2Loader.lib");
+			} else {
+				// Enable built-in WebView2 loader implementation as fallback
+				AC_DEFINE('WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL', 1, 'Use built-in WebView2 loader implementation');
+				AC_DEFINE('WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK', 1, 'Enable explicit linking of WebView2Loader.dll');
+				STDOUT.WriteLine("Using built-in WebView2 loader implementation");
+			}
+		} else {
+			// Fallback to built-in implementation
+			AC_DEFINE('WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL', 1, 'Use built-in WebView2 loader implementation');
+			AC_DEFINE('WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK', 1, 'Enable explicit linking of WebView2Loader.dll');
+			STDOUT.WriteLine("Using built-in WebView2 loader (no library path found)");
+		}
+
+		// Required Windows system libraries as per webview documentation
+		ADD_FLAG("LIBS_WEBVIEW", "advapi32.lib ole32.lib shell32.lib shlwapi.lib user32.lib version.lib");
+
+		// C++ compilation settings - WebView2 requires C++14 minimum
+		ADD_FLAG("CFLAGS_WEBVIEW", "/std:c++14 /EHsc");
+
+		// Enable Windows API definitions
+		ADD_FLAG("CFLAGS_WEBVIEW", "/DWIN32_LEAN_AND_MEAN /DNOMINMAX");
+
+		// Static runtime linking for better distribution (optional, can be removed if problematic)
+		if (PHP_DEBUG == "no") {
+			ADD_FLAG("CFLAGS_WEBVIEW", "/MT");
+		} else {
+			ADD_FLAG("CFLAGS_WEBVIEW", "/MTd");
+		}
+
+		// Enable TSRMLS cache for better performance
+		ADD_FLAG("CFLAGS_WEBVIEW", "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
+
+		// Register the extension
+		// Note: Using 'webview.c' as primary source, 'libwebview.cc' for C++ code
+		if (FSO.FileExists(configure_module_dirname + "\\webview.c") &&
+		    FSO.FileExists(configure_module_dirname + "\\libwebview.cc")) {
+			EXTENSION('webview', 'webview.c libwebview.cc', PHP_WEBVIEW_SHARED, null, null, 'cxx');
+			STDOUT.WriteLine("Registered extension with both C and C++ sources");
+		} else if (FSO.FileExists(configure_module_dirname + "\\webview.c")) {
+			EXTENSION('webview', 'webview.c', PHP_WEBVIEW_SHARED, null, null, 'cxx');
+			STDOUT.WriteLine("Registered extension with C source only");
+		} else {
+			ERROR("webview.c not found in: " + configure_module_dirname);
+		}
+
+		// Add dependency on json extension
+		ADD_EXTENSION_DEP('webview', 'json', false);
+
+		STDOUT.WriteLine("webview extension configuration completed successfully");
+	}
+}

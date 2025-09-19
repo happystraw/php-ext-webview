@@ -1,0 +1,91 @@
+CompileFlags:
+    Add:
+        # C/C++ standards
+        - -std=c++11
+        - -xc++
+
+        # PHP include paths
+        - -I./../../include/php
+        - -I./../../include/php/main
+        - -I./../../include/php/TSRM
+        - -I./../../include/php/Zend
+        - -I./../../include/php/ext
+        - -I./../../include/php/ext/date/lib
+
+        # Project include paths
+        - -I.
+        - -Ideps
+
+        # WebKitGTK include paths (Linux)
+        - -I/usr/include/webkitgtk-4.1
+        - -I/usr/include/gtk-3.0
+        - -I/usr/include/pango-1.0
+        - -I/usr/include/cloudproviders
+        - -I/usr/include/cairo
+        - -I/usr/include/gdk-pixbuf-2.0
+        - -I/usr/include/at-spi2-atk/2.0
+        - -I/usr/include/at-spi-2.0
+        - -I/usr/include/atk-1.0
+        - -I/usr/include/dbus-1.0
+        - -I/usr/lib/dbus-1.0/include
+        - -I/usr/include/fribidi
+        - -I/usr/include/pixman-1
+        - -I/usr/include/harfbuzz
+        - -I/usr/include/freetype2
+        - -I/usr/include/libpng16
+        - -I/usr/include/gio-unix-2.0
+        - -I/usr/include/libsoup-3.0
+        - -I/usr/include/libmount
+        - -I/usr/include/blkid
+        - -I/usr/include/glib-2.0
+        - -I/usr/lib/glib-2.0/include
+        - -I/usr/include/sysprof-6
+
+        # Preprocessor definitions
+        - -DHAVE_CONFIG_H
+        - -DZEND_COMPILE_DL_EXT=1
+        - -DWEBVIEW_STATIC=1
+        - -DWEBVIEW_IMPLEMENTATION=1
+        - -DCOMPILE_DL_WEBVIEW=1
+        # - -DHAVE_WEBVIEW=1
+
+        # Threading support
+        - -pthread
+
+        # Debug flags
+        - -g
+        - -O0
+
+    Remove:
+        # Remove problematic flags that might interfere with clangd
+        - -static
+        - -fPIC
+        - -DPIC
+        - -MMD
+        - -MF
+        - -MT
+
+Index:
+    Background: Build
+    StandardLibrary: true
+
+Diagnostics:
+    ClangTidy:
+        Add:
+            - performance-*
+            - bugprone-*
+        Remove:
+            - bugprone-easily-swappable-parameters
+    UnusedIncludes: Strict
+    MissingIncludes: None
+
+InlayHints:
+    Enabled: true
+    ParameterNames: true
+    DeducedTypes: true
+
+Completion:
+    AllScopes: true
+
+Hover:
+    ShowAKA: true

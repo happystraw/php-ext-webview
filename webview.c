@@ -825,6 +825,106 @@ PHP_METHOD(Webview_Webview, show)
 }
 /* }}} */
 
+/* {{{ Webview::isFullscreen(): bool */
+PHP_METHOD(Webview_Webview, isFullscreen)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    int result;
+    webview_error_t error = webview_window_is_fullscreen(intern->webview, &result);
+    if (error != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(error, "Failed to check fullscreen status");
+        RETURN_THROWS();
+    }
+
+    RETURN_BOOL(result);
+}
+/* }}} */
+
+/* {{{ Webview::isMaximized(): bool */
+PHP_METHOD(Webview_Webview, isMaximized)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    int result;
+    webview_error_t error = webview_window_is_maximized(intern->webview, &result);
+    if (error != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(error, "Failed to check maximized status");
+        RETURN_THROWS();
+    }
+
+    RETURN_BOOL(result);
+}
+/* }}} */
+
+/* {{{ Webview::isMinimized(): bool */
+PHP_METHOD(Webview_Webview, isMinimized)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    int result;
+    webview_error_t error = webview_window_is_minimized(intern->webview, &result);
+    if (error != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(error, "Failed to check minimized status");
+        RETURN_THROWS();
+    }
+
+    RETURN_BOOL(result);
+}
+/* }}} */
+
+/* {{{ Webview::isVisible(): bool */
+PHP_METHOD(Webview_Webview, isVisible)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    int result;
+    webview_error_t error = webview_window_is_visible(intern->webview, &result);
+    if (error != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(error, "Failed to check visibility status");
+        RETURN_THROWS();
+    }
+
+    RETURN_BOOL(result);
+}
+/* }}} */
+
 /* {{{ Webview::version(): array */
 PHP_METHOD(Webview_Webview, version)
 {

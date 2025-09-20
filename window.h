@@ -15,6 +15,11 @@ WEBVIEW_API webview_error_t webview_window_unfullscreen(webview_t w);
 WEBVIEW_API webview_error_t webview_window_hide(webview_t w);
 WEBVIEW_API webview_error_t webview_window_show(webview_t w);
 
+WEBVIEW_API webview_error_t webview_window_is_fullscreen(webview_t w, int *result);
+WEBVIEW_API webview_error_t webview_window_is_maximized(webview_t w, int *result);
+WEBVIEW_API webview_error_t webview_window_is_minimized(webview_t w, int *result);
+WEBVIEW_API webview_error_t webview_window_is_visible(webview_t w, int *result);
+
 #if defined(__cplusplus)
 } /* extern "C" */
 #endif

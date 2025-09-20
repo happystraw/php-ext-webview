@@ -269,6 +269,42 @@ final class Webview
     public function show(): void {}
 
     /**
+     * Check if the webview window is in fullscreen mode
+     *
+     * @return bool Returns true if window is in fullscreen mode, false otherwise
+     *
+     * @throws WebviewException on failure
+     */
+    public function isFullscreen(): bool {}
+
+    /**
+     * Check if the webview window is maximized
+     *
+     * @return bool Returns true if window is maximized, false otherwise
+     *
+     * @throws WebviewException on failure
+     */
+    public function isMaximized(): bool {}
+
+    /**
+     * Check if the webview window is minimized
+     *
+     * @return bool Returns true if window is minimized, false otherwise
+     *
+     * @throws WebviewException on failure
+     */
+    public function isMinimized(): bool {}
+
+    /**
+     * Check if the webview window is visible
+     *
+     * @return bool Returns true if window is visible, false otherwise
+     *
+     * @throws WebviewException on failure
+     */
+    public function isVisible(): bool {}
+
+    /**
      * Get the library version information
      *
      * @return array{

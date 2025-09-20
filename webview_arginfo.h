@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 20c365501891374783f94f3469dd3d920046d4aa */
+ * Stub hash: 193505b7ddb467dd49b710fbbcaabbd71217e873 */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Webview_Webview___construct, 0, 0, 0)
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, debug, _IS_BOOL, 0, "false")
@@ -70,6 +70,15 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_Webview_Webview_show arginfo_class_Webview_Webview_run
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Webview_Webview_isFullscreen, 0, 0, _IS_BOOL, 0)
+ZEND_END_ARG_INFO()
+
+#define arginfo_class_Webview_Webview_isMaximized arginfo_class_Webview_Webview_isFullscreen
+
+#define arginfo_class_Webview_Webview_isMinimized arginfo_class_Webview_Webview_isFullscreen
+
+#define arginfo_class_Webview_Webview_isVisible arginfo_class_Webview_Webview_isFullscreen
+
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Webview_Webview_version, 0, 0, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
 
@@ -95,6 +104,10 @@ ZEND_METHOD(Webview_Webview, fullscreen);
 ZEND_METHOD(Webview_Webview, unfullscreen);
 ZEND_METHOD(Webview_Webview, hide);
 ZEND_METHOD(Webview_Webview, show);
+ZEND_METHOD(Webview_Webview, isFullscreen);
+ZEND_METHOD(Webview_Webview, isMaximized);
+ZEND_METHOD(Webview_Webview, isMinimized);
+ZEND_METHOD(Webview_Webview, isVisible);
 ZEND_METHOD(Webview_Webview, version);
 
 
@@ -130,6 +143,10 @@ static const zend_function_entry class_Webview_Webview_methods[] = {
 	ZEND_ME(Webview_Webview, unfullscreen, arginfo_class_Webview_Webview_unfullscreen, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, hide, arginfo_class_Webview_Webview_hide, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, show, arginfo_class_Webview_Webview_show, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, isFullscreen, arginfo_class_Webview_Webview_isFullscreen, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, isMaximized, arginfo_class_Webview_Webview_isMaximized, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, isMinimized, arginfo_class_Webview_Webview_isMinimized, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, isVisible, arginfo_class_Webview_Webview_isVisible, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, version, arginfo_class_Webview_Webview_version, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	ZEND_FE_END
 };

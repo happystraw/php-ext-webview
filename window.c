@@ -380,3 +380,165 @@ WEBVIEW_API webview_error_t webview_window_show(webview_t w) {
     return WEBVIEW_ERROR_UNSPECIFIED;
 #endif
 }
+
+// Window state query functions
+WEBVIEW_API webview_error_t webview_window_is_fullscreen(webview_t w, int *result) {
+    if (!w || !result) return WEBVIEW_ERROR_INVALID_ARGUMENT;
+
+#ifdef _WIN32
+    HWND hwnd = (HWND)webview_get_window(w);
+    if (!hwnd) return WEBVIEW_ERROR_INVALID_STATE;
+
+    DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+    *result = (style & WS_OVERLAPPEDWINDOW) ? 0 : 1;
+    return WEBVIEW_ERROR_OK;
+
+#elif defined(__APPLE__)
+    void *nswindow = webview_get_window(w);
+    if (!nswindow) return WEBVIEW_ERROR_INVALID_STATE;
+
+    id window = (id)nswindow;
+    SEL styleMask_sel = sel_registerName("styleMask");
+    if (class_respondsToSelector(object_getClass(window), styleMask_sel)) {
+        // NSWindowStyleMaskFullScreen = 1 << 14 = 16384
+        NSUInteger styleMask = ((NSUInteger(*)(id, SEL))objc_msgSend)(window, styleMask_sel);
+        *result = ((styleMask & (1 << 14)) != 0) ? 1 : 0;
+        return WEBVIEW_ERROR_OK;
+    }
+    return WEBVIEW_ERROR_INVALID_STATE;
+
+#elif defined(__linux__)
+    void *gtkwindow = webview_get_window(w);
+    if (!gtkwindow) return WEBVIEW_ERROR_INVALID_STATE;
+
+    GdkWindow *gdkwindow = gtk_widget_get_window(GTK_WIDGET(gtkwindow));
+    if (gdkwindow) {
+        GdkWindowState state = gdk_window_get_state(gdkwindow);
+        *result = (state & GDK_WINDOW_STATE_FULLSCREEN) ? 1 : 0;
+        return WEBVIEW_ERROR_OK;
+    }
+    return WEBVIEW_ERROR_INVALID_STATE;
+#else
+    return WEBVIEW_ERROR_UNSPECIFIED;
+#endif
+}
+
+WEBVIEW_API webview_error_t webview_window_is_maximized(webview_t w, int *result) {
+    if (!w || !result) return WEBVIEW_ERROR_INVALID_ARGUMENT;
+
+#ifdef _WIN32
+    HWND hwnd = (HWND)webview_get_window(w);
+    if (!hwnd) return WEBVIEW_ERROR_INVALID_STATE;
+
+    WINDOWPLACEMENT wp = { sizeof(wp) };
+    if (GetWindowPlacement(hwnd, &wp)) {
+        *result = (wp.showCmd == SW_MAXIMIZE) ? 1 : 0;
+        return WEBVIEW_ERROR_OK;
+    }
+    return WEBVIEW_ERROR_INVALID_STATE;
+
+#elif defined(__APPLE__)
+    void *nswindow = webview_get_window(w);
+    if (!nswindow) return WEBVIEW_ERROR_INVALID_STATE;
+
+    id window = (id)nswindow;
+    SEL isZoomed_sel = sel_registerName("isZoomed");
+    if (class_respondsToSelector(object_getClass(window), isZoomed_sel)) {
+        BOOL isZoomed = ((BOOL(*)(id, SEL))objc_msgSend)(window, isZoomed_sel);
+        *result = isZoomed ? 1 : 0;
+        return WEBVIEW_ERROR_OK;
+    }
+    return WEBVIEW_ERROR_INVALID_STATE;
+
+#elif defined(__linux__)
+    void *gtkwindow = webview_get_window(w);
+    if (!gtkwindow) return WEBVIEW_ERROR_INVALID_STATE;
+
+    GdkWindow *gdkwindow = gtk_widget_get_window(GTK_WIDGET(gtkwindow));
+    if (gdkwindow) {
+        GdkWindowState state = gdk_window_get_state(gdkwindow);
+        *result = (state & GDK_WINDOW_STATE_MAXIMIZED) ? 1 : 0;
+        return WEBVIEW_ERROR_OK;
+    }
+    return WEBVIEW_ERROR_INVALID_STATE;
+#else
+    return WEBVIEW_ERROR_UNSPECIFIED;
+#endif
+}
+
+WEBVIEW_API webview_error_t webview_window_is_minimized(webview_t w, int *result) {
+    if (!w || !result) return WEBVIEW_ERROR_INVALID_ARGUMENT;
+
+#ifdef _WIN32
+    HWND hwnd = (HWND)webview_get_window(w);
+    if (!hwnd) return WEBVIEW_ERROR_INVALID_STATE;
+
+    WINDOWPLACEMENT wp = { sizeof(wp) };
+    if (GetWindowPlacement(hwnd, &wp)) {
+        *result = (wp.showCmd == SW_MINIMIZE || wp.showCmd == SW_SHOWMINIMIZED) ? 1 : 0;
+        return WEBVIEW_ERROR_OK;
+    }
+    return WEBVIEW_ERROR_INVALID_STATE;
+
+#elif defined(__APPLE__)
+    void *nswindow = webview_get_window(w);
+    if (!nswindow) return WEBVIEW_ERROR_INVALID_STATE;
+
+    id window = (id)nswindow;
+    SEL isMiniaturized_sel = sel_registerName("isMiniaturized");
+    if (class_respondsToSelector(object_getClass(window), isMiniaturized_sel)) {
+        BOOL isMiniaturized = ((BOOL(*)(id, SEL))objc_msgSend)(window, isMiniaturized_sel);
+        *result = isMiniaturized ? 1 : 0;
+        return WEBVIEW_ERROR_OK;
+    }
+    return WEBVIEW_ERROR_INVALID_STATE;
+
+#elif defined(__linux__)
+    void *gtkwindow = webview_get_window(w);
+    if (!gtkwindow) return WEBVIEW_ERROR_INVALID_STATE;
+
+    GdkWindow *gdkwindow = gtk_widget_get_window(GTK_WIDGET(gtkwindow));
+    if (gdkwindow) {
+        GdkWindowState state = gdk_window_get_state(gdkwindow);
+        *result = (state & GDK_WINDOW_STATE_ICONIFIED) ? 1 : 0;
+        return WEBVIEW_ERROR_OK;
+    }
+    return WEBVIEW_ERROR_INVALID_STATE;
+#else
+    return WEBVIEW_ERROR_UNSPECIFIED;
+#endif
+}
+
+WEBVIEW_API webview_error_t webview_window_is_visible(webview_t w, int *result) {
+    if (!w || !result) return WEBVIEW_ERROR_INVALID_ARGUMENT;
+
+#ifdef _WIN32
+    HWND hwnd = (HWND)webview_get_window(w);
+    if (!hwnd) return WEBVIEW_ERROR_INVALID_STATE;
+
+    *result = IsWindowVisible(hwnd) ? 1 : 0;
+    return WEBVIEW_ERROR_OK;
+
+#elif defined(__APPLE__)
+    void *nswindow = webview_get_window(w);
+    if (!nswindow) return WEBVIEW_ERROR_INVALID_STATE;
+
+    id window = (id)nswindow;
+    SEL isVisible_sel = sel_registerName("isVisible");
+    if (class_respondsToSelector(object_getClass(window), isVisible_sel)) {
+        BOOL isVisible = ((BOOL(*)(id, SEL))objc_msgSend)(window, isVisible_sel);
+        *result = isVisible ? 1 : 0;
+        return WEBVIEW_ERROR_OK;
+    }
+    return WEBVIEW_ERROR_INVALID_STATE;
+
+#elif defined(__linux__)
+    void *gtkwindow = webview_get_window(w);
+    if (!gtkwindow) return WEBVIEW_ERROR_INVALID_STATE;
+
+    *result = gtk_widget_get_visible(GTK_WIDGET(gtkwindow)) ? 1 : 0;
+    return WEBVIEW_ERROR_OK;
+#else
+    return WEBVIEW_ERROR_UNSPECIFIED;
+#endif
+}

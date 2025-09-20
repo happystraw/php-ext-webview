@@ -737,34 +737,16 @@ PHP_METHOD(Webview_Webview, restore)
 }
 /* }}} */
 
-/* {{{ Webview::fullscreen(): void */
+/* {{{ Webview::fullscreen(bool $enable = true): void */
 PHP_METHOD(Webview_Webview, fullscreen)
 {
     php_webview_obj *intern;
+    zend_bool enable = 1;
 
-    ZEND_PARSE_PARAMETERS_NONE();
-
-    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
-
-    if (!intern->webview) {
-        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
-        RETURN_THROWS();
-    }
-
-    webview_error_t result = webview_window_fullscreen(intern->webview);
-    if (result != WEBVIEW_ERROR_OK) {
-        php_webview_throw_exception(result, "Failed to enter fullscreen mode");
-        RETURN_THROWS();
-    }
-}
-/* }}} */
-
-/* {{{ Webview::unfullscreen(): void */
-PHP_METHOD(Webview_Webview, unfullscreen)
-{
-    php_webview_obj *intern;
-
-    ZEND_PARSE_PARAMETERS_NONE();
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_BOOL(enable)
+    ZEND_PARSE_PARAMETERS_END();
 
     intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
 
@@ -773,10 +755,19 @@ PHP_METHOD(Webview_Webview, unfullscreen)
         RETURN_THROWS();
     }
 
-    webview_error_t result = webview_window_unfullscreen(intern->webview);
-    if (result != WEBVIEW_ERROR_OK) {
-        php_webview_throw_exception(result, "Failed to exit fullscreen mode");
-        RETURN_THROWS();
+    webview_error_t result;
+    if (enable) {
+        result = webview_window_fullscreen(intern->webview);
+        if (result != WEBVIEW_ERROR_OK) {
+            php_webview_throw_exception(result, "Failed to enter fullscreen mode");
+            RETURN_THROWS();
+        }
+    } else {
+        result = webview_window_unfullscreen(intern->webview);
+        if (result != WEBVIEW_ERROR_OK) {
+            php_webview_throw_exception(result, "Failed to exit fullscreen mode");
+            RETURN_THROWS();
+        }
     }
 }
 /* }}} */

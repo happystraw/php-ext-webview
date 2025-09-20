@@ -233,22 +233,15 @@ final class Webview
     public function restore(): void {}
 
     /**
-     * Enter fullscreen mode
+     * Set fullscreen mode
+     *
+     * @param bool $enable True to enter fullscreen mode, false to exit fullscreen mode
      *
      * @return void
      *
      * @throws WebviewException on failure
      */
-    public function fullscreen(): void {}
-
-    /**
-     * Exit fullscreen mode
-     *
-     * @return void
-     *
-     * @throws WebviewException on failure
-     */
-    public function unfullscreen(): void {}
+    public function fullscreen(bool $enable = true): void {}
 
     /**
      * Hide the webview window

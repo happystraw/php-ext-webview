@@ -21,10 +21,10 @@ $w->bind('minimize_restore', function() use ($w) {
     $w->eval('setTimeout(() => { window.restore(); }, 2000);');
 });
 $w->bind('fullscreen', function() use ($w) {
-    $w->fullscreen();
+    $w->fullscreen(true);
 });
 $w->bind('unfullscreen', function() use ($w) {
-    $w->unfullscreen();
+    $w->fullscreen(false);
 });
 $w->bind('hide', function() use ($w) {
     $w->hide();
@@ -70,8 +70,8 @@ $w->setHtml(<<<'HTML'
             background-color: #f0f0f0;
         }
         button {
-            margin: 5px;
-            padding: 10px 20px;
+            margin: 4px;
+            padding: 4px 8px;
             font-size: 16px;
             cursor: pointer;
         }

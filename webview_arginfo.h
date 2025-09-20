@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 193505b7ddb467dd49b710fbbcaabbd71217e873 */
+ * Stub hash: e2961fabde5432b002996204db43a5181280d0e7 */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Webview_Webview___construct, 0, 0, 0)
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, debug, _IS_BOOL, 0, "false")
@@ -62,9 +62,9 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_Webview_Webview_restore arginfo_class_Webview_Webview_run
 
-#define arginfo_class_Webview_Webview_fullscreen arginfo_class_Webview_Webview_run
-
-#define arginfo_class_Webview_Webview_unfullscreen arginfo_class_Webview_Webview_run
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Webview_Webview_fullscreen, 0, 0, IS_VOID, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, enable, _IS_BOOL, 0, "true")
+ZEND_END_ARG_INFO()
 
 #define arginfo_class_Webview_Webview_hide arginfo_class_Webview_Webview_run
 
@@ -101,7 +101,6 @@ ZEND_METHOD(Webview_Webview, maximize);
 ZEND_METHOD(Webview_Webview, minimize);
 ZEND_METHOD(Webview_Webview, restore);
 ZEND_METHOD(Webview_Webview, fullscreen);
-ZEND_METHOD(Webview_Webview, unfullscreen);
 ZEND_METHOD(Webview_Webview, hide);
 ZEND_METHOD(Webview_Webview, show);
 ZEND_METHOD(Webview_Webview, isFullscreen);
@@ -140,7 +139,6 @@ static const zend_function_entry class_Webview_Webview_methods[] = {
 	ZEND_ME(Webview_Webview, minimize, arginfo_class_Webview_Webview_minimize, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, restore, arginfo_class_Webview_Webview_restore, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, fullscreen, arginfo_class_Webview_Webview_fullscreen, ZEND_ACC_PUBLIC)
-	ZEND_ME(Webview_Webview, unfullscreen, arginfo_class_Webview_Webview_unfullscreen, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, hide, arginfo_class_Webview_Webview_hide, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, show, arginfo_class_Webview_Webview_show, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, isFullscreen, arginfo_class_Webview_Webview_isFullscreen, ZEND_ACC_PUBLIC)

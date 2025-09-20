@@ -5,6 +5,7 @@ use Webview\WebviewHint;
 
 $w = new Webview(true);
 $w->setTitle("Webview Window Control Example");
+$w->setSize(800, 600, WebviewHint::MIN);
 $w->setSize(800, 600, WebviewHint::NONE);
 $w->bind('maximize', function() use ($w) {
     $w->maximize();
@@ -67,8 +68,15 @@ $w->setHtml(<<<'HTML'
     <button onclick="window.fullscreen()">Fullscreen</button>
     <button onclick="window.unfullscreen()">Unfullscreen</button>
     <button onclick="window.hide()">Hide (shows again after 2 seconds)</button>
+    <script>
+        // onready show the window
+        window.addEventListener('load', () => {
+            window.show();
+        });
+    </script>
 </body>
 </html>
 HTML
 );
+$w->hide();
 $w->run();

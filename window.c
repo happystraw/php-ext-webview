@@ -26,6 +26,14 @@ typedef unsigned long NSUInteger;
 typedef unsigned int NSUInteger;
 #endif
 #endif
+// For NSInteger type
+#ifndef NSInteger
+#if __LP64__ || (TARGET_OS_EMBEDDED && !TARGET_OS_IPHONE) || TARGET_OS_WIN32 || NS_BUILD_32_LIKE_64
+typedef long NSInteger;
+#else
+typedef int NSInteger;
+#endif
+#endif
 #elif defined(__linux__)
 #include <gtk/gtk.h>
 #endif
@@ -281,11 +289,20 @@ WEBVIEW_API webview_error_t webview_window_hide(webview_t w) {
     SEL sharedApp_sel = sel_registerName("sharedApplication");
     id nsApp = ((id(*)(Class, SEL))objc_msgSend)(nsAppClass, sharedApp_sel);
     if (nsApp) {
+        // Set activation policy to Accessory to hide dock icon
+        // NSApplicationActivationPolicyAccessory = 1
+        SEL setActivationPolicy_sel = sel_registerName("setActivationPolicy:");
+        if (class_respondsToSelector(object_getClass(nsApp), setActivationPolicy_sel)) {
+            ((BOOL(*)(id, SEL, NSInteger))objc_msgSend)(nsApp, setActivationPolicy_sel, 1);
+        }
+
+        // Also hide the application
         SEL hide_sel = sel_registerName("hide:");
         if (class_respondsToSelector(object_getClass(nsApp), hide_sel)) {
-            ((void(*)(id, SEL, id))objc_msgSend)(nsApp, hide_sel, nsApp);
-            return WEBVIEW_ERROR_OK;
+            // Hide the application - pass nil as sender
+            ((void(*)(id, SEL, id))objc_msgSend)(nsApp, hide_sel, nil);
         }
+        return WEBVIEW_ERROR_OK;
     }
 
     // Fallback to just hiding the window
@@ -325,10 +342,17 @@ WEBVIEW_API webview_error_t webview_window_show(webview_t w) {
     SEL sharedApp_sel = sel_registerName("sharedApplication");
     id nsApp = ((id(*)(Class, SEL))objc_msgSend)(nsAppClass, sharedApp_sel);
     if (nsApp) {
+        // Set activation policy back to Regular to show dock icon
+        // NSApplicationActivationPolicyRegular = 0
+        SEL setActivationPolicy_sel = sel_registerName("setActivationPolicy:");
+        if (class_respondsToSelector(object_getClass(nsApp), setActivationPolicy_sel)) {
+            ((BOOL(*)(id, SEL, NSInteger))objc_msgSend)(nsApp, setActivationPolicy_sel, 0);
+        }
+
         // Unhide the application first
         SEL unhide_sel = sel_registerName("unhide:");
         if (class_respondsToSelector(object_getClass(nsApp), unhide_sel)) {
-            ((void(*)(id, SEL, id))objc_msgSend)(nsApp, unhide_sel, nsApp);
+            ((void(*)(id, SEL, id))objc_msgSend)(nsApp, unhide_sel, nil);
         }
 
         // Activate the application to bring it to front

@@ -1,6 +1,5 @@
 /* webview extension for PHP */
 
-#include "zend_API.h"
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -667,6 +666,160 @@ PHP_METHOD(Webview_Webview, dispatch)
         efree(fn);
         efree(context);
         php_webview_throw_exception(result, "Failed to dispatch callback");
+        RETURN_THROWS();
+    }
+}
+/* }}} */
+
+/* {{{ Webview::maximize(): void */
+PHP_METHOD(Webview_Webview, maximize)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    webview_error_t result = webview_window_maximize(intern->webview);
+    if (result != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(result, "Failed to maximize window");
+        RETURN_THROWS();
+    }
+}
+/* }}} */
+
+/* {{{ Webview::minimize(): void */
+PHP_METHOD(Webview_Webview, minimize)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    webview_error_t result = webview_window_minimize(intern->webview);
+    if (result != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(result, "Failed to minimize window");
+        RETURN_THROWS();
+    }
+}
+/* }}} */
+
+/* {{{ Webview::restore(): void */
+PHP_METHOD(Webview_Webview, restore)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    webview_error_t result = webview_window_restore(intern->webview);
+    if (result != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(result, "Failed to restore window");
+        RETURN_THROWS();
+    }
+}
+/* }}} */
+
+/* {{{ Webview::fullscreen(): void */
+PHP_METHOD(Webview_Webview, fullscreen)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    webview_error_t result = webview_window_fullscreen(intern->webview);
+    if (result != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(result, "Failed to enter fullscreen mode");
+        RETURN_THROWS();
+    }
+}
+/* }}} */
+
+/* {{{ Webview::unfullscreen(): void */
+PHP_METHOD(Webview_Webview, unfullscreen)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    webview_error_t result = webview_window_unfullscreen(intern->webview);
+    if (result != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(result, "Failed to exit fullscreen mode");
+        RETURN_THROWS();
+    }
+}
+/* }}} */
+
+/* {{{ Webview::hide(): void */
+PHP_METHOD(Webview_Webview, hide)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    webview_error_t result = webview_window_hide(intern->webview);
+    if (result != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(result, "Failed to hide window");
+        RETURN_THROWS();
+    }
+}
+/* }}} */
+
+/* {{{ Webview::show(): void */
+PHP_METHOD(Webview_Webview, show)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    webview_error_t result = webview_window_show(intern->webview);
+    if (result != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(result, "Failed to show window");
         RETURN_THROWS();
     }
 }

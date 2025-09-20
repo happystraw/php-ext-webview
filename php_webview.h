@@ -11,6 +11,7 @@ extern zend_module_entry webview_module_entry;
 // Include webview library header
 #define WEBVIEW_STATIC "1"
 #include "webview/webview.h"
+#include "window.h"
 
 // Webview object structure
 typedef struct _php_webview_obj {

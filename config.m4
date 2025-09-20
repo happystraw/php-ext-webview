@@ -120,7 +120,7 @@ if test "$PHP_WEBVIEW" != "no"; then
   dnl Substitute shared library dependencies
   PHP_SUBST(WEBVIEW_SHARED_LIBADD)
 
-  PHP_WEBVIEW_SOURCES="webview.c"
+  PHP_WEBVIEW_SOURCES="webview.c window.c"
   PHP_NEW_EXTENSION(webview, $PHP_WEBVIEW_SOURCES, $ext_shared,,-DZEND_ENABLE_STATIC_TSRMLS_CACHE=1, cxx)
   PHP_ADD_EXTENSION_DEP(webview, json)
 

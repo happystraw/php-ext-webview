@@ -41,8 +41,7 @@ tests/**/*.mem
 tmp-php.ini
 config.h.in~
 configure~
-webview.dep
-libwebview.dep
+*.dep
 /.vscode
 /.cursor
 /.idea

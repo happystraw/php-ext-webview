@@ -149,6 +149,9 @@ final class Webview
      * returns: optional, either a JSON-encoded string to be returned to JavaScript.
      *          see return() for details.
      *
+     * This method is blocked until the binding is complete,
+     * next lib webview version this maybe changed.
+     *
      * @param string                                                                        $name     Name of the JavaScript function
      * @param callable(string $id,string $req):string|callable(string $id,string $req):void $callback PHP callback function
      *
@@ -192,6 +195,8 @@ final class Webview
      * If the webview is not running, a memory leak may occur
      * when the webview instance is held by a circular reference.
      *
+     * Next lib webview version this maybe removed.
+     *
      * @param callable():void $callback The function to invoke
      *
      * @return void
@@ -199,6 +204,69 @@ final class Webview
      * @throws WebviewException on failure
      */
     public function dispatch(callable $callback): void {}
+
+    /**
+     * Maximize the webview window
+     *
+     * @return void
+     *
+     * @throws WebviewException on failure
+     */
+    public function maximize(): void {}
+
+    /**
+     * Minimize the webview window
+     *
+     * @return void
+     *
+     * @throws WebviewException on failure
+     */
+    public function minimize(): void {}
+
+    /**
+     * Restore the webview window from maximized or minimized state
+     *
+     * @return void
+     *
+     * @throws WebviewException on failure
+     */
+    public function restore(): void {}
+
+    /**
+     * Enter fullscreen mode
+     *
+     * @return void
+     *
+     * @throws WebviewException on failure
+     */
+    public function fullscreen(): void {}
+
+    /**
+     * Exit fullscreen mode
+     *
+     * @return void
+     *
+     * @throws WebviewException on failure
+     */
+    public function unfullscreen(): void {}
+
+    /**
+     * Hide the webview window
+     *
+     * @return void
+     *
+     * @throws WebviewException on failure
+     */
+    public function hide(): void {}
+
+    /**
+     * Show the webview window
+     *
+     * @return void
+     *
+     * @throws WebviewException on failure
+     */
+    public function show(): void {}
 
     /**
      * Get the library version information

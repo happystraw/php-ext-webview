@@ -14,11 +14,12 @@ $w->setTitle("Webview Window Control Example");
 $w->setSize(800, 600, WebviewHint::MIN);
 $w->setSize(800, 600, WebviewHint::NONE);
 $w->bind('maximize', fn() => $w->maximize());
+$w->bind('unmaximize', fn() => $w->unmaximize());
 $w->bind('minimize', fn() => $w->minimize());
-$w->bind('restore', fn() => $w->restore());
-$w->bind('minimize_restore', function() use ($w) {
+$w->bind('unminimize', fn() => $w->unminimize());
+$w->bind('minimize_unminimize', function() use ($w) {
     $w->minimize();
-    $w->eval('setTimeout(() => { window.restore(); }, 2000);');
+    $w->eval('setTimeout(() => { window.unminimize(); }, 2000);');
 });
 $w->bind('fullscreen', fn() => $w->fullscreen(true));
 $w->bind('unfullscreen', fn() => $w->fullscreen(false));
@@ -90,9 +91,9 @@ $w->setHtml(<<<'HTML'
     <div class="control-section">
         <h3>Window Controls</h3>
         <button onclick="window.maximize()">Maximize</button>
+        <button onclick="window.unmaximize()">Unmaximize</button>
         <button onclick="window.minimize()">Minimize</button>
-        <button onclick="window.restore()">Restore</button>
-        <button onclick="window.minimize_restore()">Minimize (restore after 2 seconds)</button>
+        <button onclick="window.minimize_unminimize()">Minimize (unminimize after 2 seconds)</button>
         <br>
         <button onclick="window.fullscreen()">Fullscreen</button>
         <button onclick="window.unfullscreen()">Unfullscreen</button>

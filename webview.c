@@ -715,8 +715,8 @@ PHP_METHOD(Webview_Webview, minimize)
 }
 /* }}} */
 
-/* {{{ Webview::restore(): void */
-PHP_METHOD(Webview_Webview, restore)
+/* {{{ Webview::unmaximize(): void */
+PHP_METHOD(Webview_Webview, unmaximize)
 {
     php_webview_obj *intern;
 
@@ -729,9 +729,31 @@ PHP_METHOD(Webview_Webview, restore)
         RETURN_THROWS();
     }
 
-    webview_error_t result = webview_window_restore(intern->webview);
+    webview_error_t result = webview_window_unmaximize(intern->webview);
     if (result != WEBVIEW_ERROR_OK) {
-        php_webview_throw_exception(result, "Failed to restore window");
+        php_webview_throw_exception(result, "Failed to unmaximize window");
+        RETURN_THROWS();
+    }
+}
+/* }}} */
+
+/* {{{ Webview::unminimize(): void */
+PHP_METHOD(Webview_Webview, unminimize)
+{
+    php_webview_obj *intern;
+
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
+
+    if (!intern->webview) {
+        php_webview_throw_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is not initialized");
+        RETURN_THROWS();
+    }
+
+    webview_error_t result = webview_window_unminimize(intern->webview);
+    if (result != WEBVIEW_ERROR_OK) {
+        php_webview_throw_exception(result, "Failed to unminimize window");
         RETURN_THROWS();
     }
 }

@@ -132,13 +132,17 @@ WEBVIEW_API webview_error_t webview_window_minimize(webview_t w) {
 #endif
 }
 
-WEBVIEW_API webview_error_t webview_window_restore(webview_t w) {
+WEBVIEW_API webview_error_t webview_window_unmaximize(webview_t w) {
     if (!w) return WEBVIEW_ERROR_INVALID_STATE;
 
 #ifdef _WIN32
     HWND hwnd = (HWND)webview_get_window(w);
     if (!hwnd) return WEBVIEW_ERROR_INVALID_STATE;
-    ShowWindow(hwnd, SW_RESTORE);
+
+    WINDOWPLACEMENT wp = { sizeof(wp) };
+    if (GetWindowPlacement(hwnd, &wp) && wp.showCmd == SW_MAXIMIZE) {
+        ShowWindow(hwnd, SW_RESTORE);
+    }
     return WEBVIEW_ERROR_OK;
 
 #elif defined(__APPLE__)
@@ -146,25 +150,13 @@ WEBVIEW_API webview_error_t webview_window_restore(webview_t w) {
     if (!nswindow) return WEBVIEW_ERROR_INVALID_STATE;
 
     id window = (id)nswindow;
-
-    // Check if window is currently zoomed (maximized)
     SEL isZoomed_sel = sel_registerName("isZoomed");
     SEL zoom_sel = sel_registerName("zoom:");
-    SEL deminiaturize_sel = sel_registerName("deminiaturize:");
-    SEL isMiniaturized_sel = sel_registerName("isMiniaturized");
 
     if (class_respondsToSelector(object_getClass(window), isZoomed_sel) &&
-        class_respondsToSelector(object_getClass(window), zoom_sel) &&
-        class_respondsToSelector(object_getClass(window), deminiaturize_sel) &&
-        class_respondsToSelector(object_getClass(window), isMiniaturized_sel)) {
+        class_respondsToSelector(object_getClass(window), zoom_sel)) {
 
-        // Check if minimized first, then restore from minimized state
-        BOOL isMiniaturized = ((BOOL(*)(id, SEL))objc_msgSend)(window, isMiniaturized_sel);
-        if (isMiniaturized) {
-            ((void(*)(id, SEL, id))objc_msgSend)(window, deminiaturize_sel, window);
-        }
-
-        // Check if maximized (zoomed), then restore from maximized state
+        // Check if maximized (zoomed), then unmaximize
         BOOL isZoomed = ((BOOL(*)(id, SEL))objc_msgSend)(window, isZoomed_sel);
         if (isZoomed) {
             ((void(*)(id, SEL, id))objc_msgSend)(window, zoom_sel, window);
@@ -175,45 +167,49 @@ WEBVIEW_API webview_error_t webview_window_restore(webview_t w) {
 #elif defined(__linux__)
     void *gtkwindow = webview_get_window(w);
     if (!gtkwindow) return WEBVIEW_ERROR_INVALID_STATE;
-    // Restore window from various states on GTK (Linux):
-    // - If minimized, unminimize
-    // - If maximized, unmaximize
-    // - Ensure visible and present (raise and focus)
+    gtk_window_unmaximize(GTK_WINDOW(gtkwindow));
+    return WEBVIEW_ERROR_OK;
+#endif
+}
+
+WEBVIEW_API webview_error_t webview_window_unminimize(webview_t w) {
+    if (!w) return WEBVIEW_ERROR_INVALID_STATE;
+
+#ifdef _WIN32
+    HWND hwnd = (HWND)webview_get_window(w);
+    if (!hwnd) return WEBVIEW_ERROR_INVALID_STATE;
+
+    WINDOWPLACEMENT wp = { sizeof(wp) };
+    if (GetWindowPlacement(hwnd, &wp) &&
+        (wp.showCmd == SW_MINIMIZE || wp.showCmd == SW_SHOWMINIMIZED)) {
+        ShowWindow(hwnd, SW_RESTORE);
+    }
+    return WEBVIEW_ERROR_OK;
+
+#elif defined(__APPLE__)
+    void *nswindow = webview_get_window(w);
+    if (!nswindow) return WEBVIEW_ERROR_INVALID_STATE;
+
+    id window = (id)nswindow;
+    SEL deminiaturize_sel = sel_registerName("deminiaturize:");
+    SEL isMiniaturized_sel = sel_registerName("isMiniaturized");
+
+    if (class_respondsToSelector(object_getClass(window), deminiaturize_sel) &&
+        class_respondsToSelector(object_getClass(window), isMiniaturized_sel)) {
+
+        // Check if minimized, then unminimize
+        BOOL isMiniaturized = ((BOOL(*)(id, SEL))objc_msgSend)(window, isMiniaturized_sel);
+        if (isMiniaturized) {
+            ((void(*)(id, SEL, id))objc_msgSend)(window, deminiaturize_sel, window);
+        }
+    }
+    return WEBVIEW_ERROR_OK;
+
+#elif defined(__linux__)
+    void *gtkwindow = webview_get_window(w);
+    if (!gtkwindow) return WEBVIEW_ERROR_INVALID_STATE;
     GtkWindow *win = GTK_WINDOW(gtkwindow);
-
-    // Query current surface/window state if available
-#if GTK_MAJOR_VERSION >= 4
-    GdkSurface *surface = GTK_GET_SURFACE(win);
-    if (surface) {
-        GdkToplevelState state = GTK_SURFACE_STATE(surface);
-        if (state & GDK_TOPLEVEL_STATE_MINIMIZED) {
-            GTK_WINDOW_UNMINIMIZE(win);
-        } else if (state & GDK_TOPLEVEL_STATE_MAXIMIZED) {
-            gtk_window_unmaximize(win);
-        }
-    }
-#else
-    GdkWindow *gdkwindow = GTK_GET_SURFACE(win);
-    if (gdkwindow) {
-        GdkWindowState state = GTK_SURFACE_STATE(gdkwindow);
-        if (state & GDK_WINDOW_STATE_ICONIFIED) {
-            GTK_WINDOW_UNMINIMIZE(win);
-        } else if (state & GDK_WINDOW_STATE_MAXIMIZED) {
-            gtk_window_unmaximize(win);
-        }
-    }
-#endif
-
-    // Ensure window is visible
-    if (!gtk_widget_get_visible(GTK_WIDGET(win))) {
-#if GTK_MAJOR_VERSION >= 4
-        gtk_widget_set_visible(GTK_WIDGET(win), TRUE);
-#else
-        gtk_widget_show(GTK_WIDGET(win));
-#endif
-    }
-
-    // Present the window to raise/focus it
+    GTK_WINDOW_UNMINIMIZE(win);
     gtk_window_present(win);
     return WEBVIEW_ERROR_OK;
 #else
@@ -374,11 +370,11 @@ WEBVIEW_API webview_error_t webview_window_hide(webview_t w) {
 #elif defined(__linux__)
     void *gtkwindow = webview_get_window(w);
     if (!gtkwindow) return WEBVIEW_ERROR_INVALID_STATE;
-    if (!gtk_widget_get_visible(GTK_WIDGET(gtkwindow))) {
+    if (gtk_widget_get_visible(GTK_WIDGET(gtkwindow))) {
 #if GTK_MAJOR_VERSION >= 4
         gtk_widget_set_visible(GTK_WIDGET(gtkwindow), FALSE);
 #else
-        gtk_widget_show(GTK_WIDGET(gtkwindow));
+        gtk_widget_hide(GTK_WIDGET(gtkwindow));
 #endif
     }
     return WEBVIEW_ERROR_OK;

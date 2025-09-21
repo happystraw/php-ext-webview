@@ -224,13 +224,22 @@ final class Webview
     public function minimize(): void {}
 
     /**
-     * Restore the webview window from maximized or minimized state
+     * Unmaximize the webview window
      *
      * @return void
      *
      * @throws WebviewException on failure
      */
-    public function restore(): void {}
+    public function unmaximize(): void {}
+
+    /**
+     * Unminimize the webview window
+     *
+     * @return void
+     *
+     * @throws WebviewException on failure
+     */
+    public function unminimize(): void {}
 
     /**
      * Set fullscreen mode

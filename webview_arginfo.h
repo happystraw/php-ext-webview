@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: e2961fabde5432b002996204db43a5181280d0e7 */
+ * Stub hash: f8896b444502ddc29dac495a0764a366e476baff */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Webview_Webview___construct, 0, 0, 0)
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, debug, _IS_BOOL, 0, "false")
@@ -60,7 +60,9 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_Webview_Webview_minimize arginfo_class_Webview_Webview_run
 
-#define arginfo_class_Webview_Webview_restore arginfo_class_Webview_Webview_run
+#define arginfo_class_Webview_Webview_unmaximize arginfo_class_Webview_Webview_run
+
+#define arginfo_class_Webview_Webview_unminimize arginfo_class_Webview_Webview_run
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Webview_Webview_fullscreen, 0, 0, IS_VOID, 0)
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, enable, _IS_BOOL, 0, "true")
@@ -99,7 +101,8 @@ ZEND_METHOD(Webview_Webview, return);
 ZEND_METHOD(Webview_Webview, dispatch);
 ZEND_METHOD(Webview_Webview, maximize);
 ZEND_METHOD(Webview_Webview, minimize);
-ZEND_METHOD(Webview_Webview, restore);
+ZEND_METHOD(Webview_Webview, unmaximize);
+ZEND_METHOD(Webview_Webview, unminimize);
 ZEND_METHOD(Webview_Webview, fullscreen);
 ZEND_METHOD(Webview_Webview, hide);
 ZEND_METHOD(Webview_Webview, show);
@@ -137,7 +140,8 @@ static const zend_function_entry class_Webview_Webview_methods[] = {
 	ZEND_ME(Webview_Webview, dispatch, arginfo_class_Webview_Webview_dispatch, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, maximize, arginfo_class_Webview_Webview_maximize, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, minimize, arginfo_class_Webview_Webview_minimize, ZEND_ACC_PUBLIC)
-	ZEND_ME(Webview_Webview, restore, arginfo_class_Webview_Webview_restore, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, unmaximize, arginfo_class_Webview_Webview_unmaximize, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, unminimize, arginfo_class_Webview_Webview_unminimize, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, fullscreen, arginfo_class_Webview_Webview_fullscreen, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, hide, arginfo_class_Webview_Webview_hide, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, show, arginfo_class_Webview_Webview_show, ZEND_ACC_PUBLIC)

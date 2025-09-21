@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: e6ad41c06e2949190fd4b62cba4f2d81b20c7d56 */
+ * Stub hash: e2961fabde5432b002996204db43a5181280d0e7 */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Webview_Webview___construct, 0, 0, 0)
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, debug, _IS_BOOL, 0, "false")
@@ -56,6 +56,29 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Webview_Webview_dispatch, 
 	ZEND_ARG_TYPE_INFO(0, callback, IS_CALLABLE, 0)
 ZEND_END_ARG_INFO()
 
+#define arginfo_class_Webview_Webview_maximize arginfo_class_Webview_Webview_run
+
+#define arginfo_class_Webview_Webview_minimize arginfo_class_Webview_Webview_run
+
+#define arginfo_class_Webview_Webview_restore arginfo_class_Webview_Webview_run
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Webview_Webview_fullscreen, 0, 0, IS_VOID, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, enable, _IS_BOOL, 0, "true")
+ZEND_END_ARG_INFO()
+
+#define arginfo_class_Webview_Webview_hide arginfo_class_Webview_Webview_run
+
+#define arginfo_class_Webview_Webview_show arginfo_class_Webview_Webview_run
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Webview_Webview_isFullscreen, 0, 0, _IS_BOOL, 0)
+ZEND_END_ARG_INFO()
+
+#define arginfo_class_Webview_Webview_isMaximized arginfo_class_Webview_Webview_isFullscreen
+
+#define arginfo_class_Webview_Webview_isMinimized arginfo_class_Webview_Webview_isFullscreen
+
+#define arginfo_class_Webview_Webview_isVisible arginfo_class_Webview_Webview_isFullscreen
+
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Webview_Webview_version, 0, 0, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
 
@@ -74,6 +97,16 @@ ZEND_METHOD(Webview_Webview, bind);
 ZEND_METHOD(Webview_Webview, unbind);
 ZEND_METHOD(Webview_Webview, return);
 ZEND_METHOD(Webview_Webview, dispatch);
+ZEND_METHOD(Webview_Webview, maximize);
+ZEND_METHOD(Webview_Webview, minimize);
+ZEND_METHOD(Webview_Webview, restore);
+ZEND_METHOD(Webview_Webview, fullscreen);
+ZEND_METHOD(Webview_Webview, hide);
+ZEND_METHOD(Webview_Webview, show);
+ZEND_METHOD(Webview_Webview, isFullscreen);
+ZEND_METHOD(Webview_Webview, isMaximized);
+ZEND_METHOD(Webview_Webview, isMinimized);
+ZEND_METHOD(Webview_Webview, isVisible);
 ZEND_METHOD(Webview_Webview, version);
 
 
@@ -102,6 +135,16 @@ static const zend_function_entry class_Webview_Webview_methods[] = {
 	ZEND_ME(Webview_Webview, unbind, arginfo_class_Webview_Webview_unbind, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, return, arginfo_class_Webview_Webview_return, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, dispatch, arginfo_class_Webview_Webview_dispatch, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, maximize, arginfo_class_Webview_Webview_maximize, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, minimize, arginfo_class_Webview_Webview_minimize, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, restore, arginfo_class_Webview_Webview_restore, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, fullscreen, arginfo_class_Webview_Webview_fullscreen, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, hide, arginfo_class_Webview_Webview_hide, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, show, arginfo_class_Webview_Webview_show, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, isFullscreen, arginfo_class_Webview_Webview_isFullscreen, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, isMaximized, arginfo_class_Webview_Webview_isMaximized, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, isMinimized, arginfo_class_Webview_Webview_isMinimized, ZEND_ACC_PUBLIC)
+	ZEND_ME(Webview_Webview, isVisible, arginfo_class_Webview_Webview_isVisible, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, version, arginfo_class_Webview_Webview_version, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	ZEND_FE_END
 };

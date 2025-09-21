@@ -6,24 +6,23 @@ PHP_ARG_ENABLE([webview],
     [Enable webview support])],
   [no])
 
-if test $host_os = "linux"*; then
-  PHP_ARG_WITH([webview-webkitgtk],
-    [for WebKitGTK version],
-    [AS_HELP_STRING([--with-webview-webkitgtk=VERSION],
-      [Specify WebKitGTK version: 6.0, 4.1, or 4.0 (default: auto)])],
-    [auto])
-fi
+PHP_ARG_WITH([webkitgtk-api],
+  [for WebKitGTK API version],
+  [AS_HELP_STRING([--with-webkitgtk-api=VERSION],
+    [Linux only. Specify WebKitGTK API version: 6.0, 4.1, or 4.0 (default: auto)])],
+  [auto])
 
 if test "$PHP_WEBVIEW" != "no"; then
   dnl Check platform and configure dependencies
   case "$host_os" in
     linux*)
       dnl Linux: Check for GTK and WebKitGTK using pkg-config
-      AC_MSG_CHECKING([for GTK+ and WebKitGTK libraries])
-      AC_MSG_RESULT([checking])
+      AC_MSG_CHECKING([for GTK+ and WebKitGTK libraries with api])
+      AC_MSG_RESULT([$PHP_WEBKITGTK_API])
 
       dnl Check if specific WebKitGTK version is requested
-      case "$PHP_WEBVIEW_WEBKITGTK" in
+      AC_MSG_CHECKING([for requested WebKitGTK version])
+      case "$PHP_WEBKITGTK_API" in
         "6.0")
           AC_MSG_CHECKING([for WebKitGTK 6.0])
           PKG_CHECK_MODULES([WEBKITGTK], [gtk4 webkitgtk-6.0],
@@ -58,7 +57,6 @@ if test "$PHP_WEBVIEW" != "no"; then
             ])
           ;;
         "auto"|*)
-          AC_MSG_RESULT([auto-detecting WebKitGTK version])
           dnl Try WebKitGTK 6.0 with GTK 4 first (newest)
           PKG_CHECK_MODULES([WEBKITGTK], [gtk4 webkitgtk-6.0],
             [
@@ -120,7 +118,7 @@ if test "$PHP_WEBVIEW" != "no"; then
   dnl Substitute shared library dependencies
   PHP_SUBST(WEBVIEW_SHARED_LIBADD)
 
-  PHP_WEBVIEW_SOURCES="webview.c"
+  PHP_WEBVIEW_SOURCES="webview.c window.c"
   PHP_NEW_EXTENSION(webview, $PHP_WEBVIEW_SOURCES, $ext_shared,,-DZEND_ENABLE_STATIC_TSRMLS_CACHE=1, cxx)
   PHP_ADD_EXTENSION_DEP(webview, json)
 

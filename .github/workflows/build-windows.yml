@@ -1,0 +1,195 @@
+name: Build for Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      php-version:
+        required: true
+        description: PHP version to compile
+        default: '8.4'
+        type: choice
+        options:
+          - '8.4'
+          - '8.3'
+      build-cli:
+        description: Build cli binary
+        default: true
+        type: boolean
+      build-micro:
+        description: Build phpmicro binary
+        default: true
+        type: boolean
+      extensions:
+        description: Extensions to compile (comma separated)
+        required: true
+        type: string
+        default: 'webview'
+      extra-libs:
+        description: Extra libraries to build (optional, comma separated)
+        type: string
+      prefer-pre-built:
+        description: Prefer pre-built binaries (reduce build time)
+        type: boolean
+        default: true
+      debug:
+        description: Enable debug logs
+        type: boolean
+        default: true
+      with-upx-pack:
+        description: Pack with UPX
+        type: boolean
+        default: true
+      no-strip:
+        description: Keep debug symbols for debugging
+        type: boolean
+        default: false
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    name: Build PHP ${{ inputs.php-version }} for Windows x86_64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Setup PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: pecl
+          extensions: curl, openssl, mbstring
+          ini-values: memory_limit=-1
+
+      - name: "Clone static-php-cli"
+        run: |
+          git clone https://github.com/crazywhalecc/static-php-cli.git
+          cd static-php-cli
+          composer update --no-dev
+
+      - name: "Configure webview extension"
+        shell: bash
+        run: |
+          cd static-php-cli
+
+          # Add webview extension configuration to config/ext.json
+          if [ ! -f config/ext.json ]; then
+            echo '{}' > config/ext.json
+          fi
+
+          # Create temporary config with webview extension
+          cat config/ext.json | jq '. + {
+            "webview": {
+              "type": "external",
+              "source": "webview",
+              "frameworks": ["WebKit"],
+              "cpp-extension": true
+            }
+          }' > config/ext.json.tmp && mv config/ext.json.tmp config/ext.json
+
+          # Add webview source configuration to config/source.json
+          if [ ! -f config/source.json ]; then
+            echo '{}' > config/source.json
+          fi
+
+          # Get current branch/ref
+          CURRENT_REF="${{ github.ref_name }}"
+          echo "📌 Using branch/ref: $CURRENT_REF"
+
+          # Create temporary config with webview source
+          cat config/source.json | jq --arg ref "$CURRENT_REF" '. + {
+            "webview": {
+              "type": "git",
+              "path": "php-src/ext/webview",
+              "rev": $ref,
+              "url": "https://github.com/happystraw/php-ext-webview",
+              "license": {
+                "type": "file",
+                "path": "LICENSE"
+              }
+            }
+          }' > config/source.json.tmp && mv config/source.json.tmp config/source.json
+
+          echo "✅ Webview extension configured"
+          echo "📄 Extension config:"
+          cat config/ext.json | jq '.webview'
+          echo "📄 Source config:"
+          cat config/source.json | jq '.webview'
+
+      - name: Generate hashed key for download cache
+        shell: bash
+        run: |
+          INPUT_HASH=$(echo "windows-php-${{ inputs.php-version }}-${{ inputs.extensions }}-webview-${{ github.sha }}" | sha256sum | awk '{print $1}')
+          echo "INPUT_HASH=${INPUT_HASH}" >> "$GITHUB_ENV"
+
+      # Cache downloaded source
+      - id: cache-download
+        name: "Cache downloaded source"
+        uses: actions/cache@v4
+        with:
+          path: static-php-cli/downloads
+          key: php-dependencies-windows-php-${{ inputs.php-version }}-${{ env.INPUT_HASH }}
+
+      # With or without debug
+      - if: inputs.debug == true
+        name: "Enable debug"
+        run: echo "SPC_BUILD_DEBUG=--debug" >> $env:GITHUB_ENV
+      - if: inputs.prefer-pre-built == true
+        name: "Enable prefer pre-built"
+        run: echo "SPC_PRE_BUILT=--prefer-pre-built" >> $env:GITHUB_ENV
+      - if: inputs.with-upx-pack == true
+        name: "Enable upx pack"
+        run: echo "SPC_UPX_PACK=--with-upx-pack" >> $env:GITHUB_ENV
+
+      # With target select: cli, micro
+      - if: ${{ inputs.build-cli == true }}
+        name: "Enable build cli"
+        run: echo "SPC_BUILD_CLI=--build-cli" >> $env:GITHUB_ENV
+      - if: ${{ inputs.build-micro == true }}
+        name: "Enable build micro"
+        run: echo "SPC_BUILD_MICRO=--build-micro" >> $env:GITHUB_ENV
+
+      - name: "Run doctor"
+        run: cd static-php-cli && ./bin/spc doctor --auto-fix
+
+      # Fetch sources, with or without debug
+      - name: "Download sources"
+        run:
+          cd static-php-cli
+          ./bin/spc download --with-php="${{ inputs.php-version }}" --for-extensions="${{ inputs.extensions }}" ${{ env.SPC_BUILD_DEBUG }} ${{ env.SPC_PRE_BUILT }}
+          ./bin/spc install-pkg upx
+
+      # Run build command
+      - name: "Build PHP"
+        run: cd static-php-cli && ./bin/spc build "${{ inputs.extensions }}" ${{ env.SPC_BUILD_DEBUG }} ${{ env.SPC_BUILD_CLI }} ${{ env.SPC_BUILD_MICRO }} ${{ env.SPC_UPX_PACK }}
+
+      # Upload cli executable
+      - if: ${{ inputs.build-cli == true }}
+        name: "Upload PHP cli executable"
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-cli-${{ inputs.php-version }}-windows
+          path: static-php-cli/buildroot/bin/php.exe
+
+      # Upload micro self-extracted executable
+      - if: ${{ inputs.build-micro == true }}
+        name: "Upload PHP micro executable"
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-micro-${{ inputs.php-version }}-windows
+          path: static-php-cli/buildroot/bin/micro.sfx
+
+      # Upload extensions metadata
+      - uses: actions/upload-artifact@v4
+        name: "Upload License files"
+        with:
+          name: license-files-${{ inputs.php-version }}-windows
+          path: static-php-cli/buildroot/license/
+      - uses: actions/upload-artifact@v4
+        name: "Upload Build metadata"
+        with:
+          name: build-meta-${{ inputs.php-version }}-windows
+          path: |
+            static-php-cli/buildroot/build-extensions.json
+            static-php-cli/buildroot/build-libraries.json

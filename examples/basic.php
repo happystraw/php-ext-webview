@@ -12,5 +12,5 @@ use Webview\WebviewHint;
 $w = new Webview(true);
 $w->setTitle('Base Webview');
 $w->setSize(480, 320, WebviewHint::NONE);
-$w->setHtml('<h1>Hello from PHP!</h1>' );
+$w->setHtml('<h1>Hello from 🐘 PHP '. PHP_VERSION . '!</h1>');
 $w->run();

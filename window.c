@@ -440,6 +440,7 @@ WEBVIEW_API webview_error_t webview_window_show(webview_t w) {
         gtk_widget_show(GTK_WIDGET(gtkwindow));
 #endif
     }
+    gtk_window_present(GTK_WINDOW(gtkwindow));
     return WEBVIEW_ERROR_OK;
 #else
     return WEBVIEW_ERROR_UNSPECIFIED;

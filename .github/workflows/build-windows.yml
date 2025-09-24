@@ -19,6 +19,10 @@ on:
         description: Build phpmicro binary
         default: true
         type: boolean
+      enable-micro-win32:
+        description: Enable micro win32
+        default: true
+        type: boolean
       extensions:
         description: Extensions to compile (comma separated)
         required: true
@@ -52,7 +56,8 @@ jobs:
     name: Build PHP ${{ inputs.php-version }} for Windows x86_64
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: "Checkout"
+        uses: actions/checkout@v4
 
       - name: "Setup PHP"
         uses: shivammathur/setup-php@v2
@@ -131,29 +136,33 @@ jobs:
           path: static-php-cli/downloads
           key: php-dependencies-windows-php-${{ inputs.php-version }}-${{ env.INPUT_HASH }}
 
-      # With or without debug
       - if: inputs.debug == true
         name: "Enable debug"
         run: echo "SPC_BUILD_DEBUG=--debug" >> $env:GITHUB_ENV
+
       - if: inputs.prefer-pre-built == true
         name: "Enable prefer pre-built"
         run: echo "SPC_PRE_BUILT=--prefer-pre-built" >> $env:GITHUB_ENV
+
       - if: inputs.with-upx-pack == true
         name: "Enable upx pack"
         run: echo "SPC_UPX_PACK=--with-upx-pack" >> $env:GITHUB_ENV
 
-      # With target select: cli, micro
       - if: ${{ inputs.build-cli == true }}
         name: "Enable build cli"
         run: echo "SPC_BUILD_CLI=--build-cli" >> $env:GITHUB_ENV
+
       - if: ${{ inputs.build-micro == true }}
         name: "Enable build micro"
         run: echo "SPC_BUILD_MICRO=--build-micro" >> $env:GITHUB_ENV
 
+      - if: inputs.enable-micro-win32 == true
+        name: "Enable micro win32"
+        run: echo "SPC_ENABLE_MICRO_WIN32=--enable-micro-win32" >> $env:GITHUB_ENV
+
       - name: "Run doctor"
         run: cd static-php-cli && ./bin/spc doctor --auto-fix
 
-      # Fetch sources, with or without debug
       - name: "Download sources"
         shell: bash
         run: |
@@ -161,11 +170,9 @@ jobs:
           ./bin/spc download --with-php="${{ inputs.php-version }}" --for-extensions="${{ inputs.extensions }}" ${{ env.SPC_BUILD_DEBUG }} ${{ env.SPC_PRE_BUILT }}
           ./bin/spc install-pkg upx
 
-      # Run build command
       - name: "Build PHP"
-        run: cd static-php-cli && ./bin/spc build "${{ inputs.extensions }}" ${{ env.SPC_BUILD_DEBUG }} ${{ env.SPC_BUILD_CLI }} ${{ env.SPC_BUILD_MICRO }} ${{ env.SPC_UPX_PACK }}
+        run: cd static-php-cli && ./bin/spc build "${{ inputs.extensions }}" ${{ env.SPC_BUILD_DEBUG }} ${{ env.SPC_BUILD_CLI }} ${{ env.SPC_BUILD_MICRO }} ${{ env.SPC_UPX_PACK }} ${{ env.SPC_ENABLE_MICRO_WIN32 }}
 
-      # Upload cli executable
       - if: ${{ inputs.build-cli == true }}
         name: "Upload PHP cli executable"
         uses: actions/upload-artifact@v4
@@ -173,7 +180,6 @@ jobs:
           name: php-cli-${{ inputs.php-version }}-windows
           path: static-php-cli/buildroot/bin/php.exe
 
-      # Upload micro self-extracted executable
       - if: ${{ inputs.build-micro == true }}
         name: "Upload PHP micro executable"
         uses: actions/upload-artifact@v4
@@ -181,12 +187,12 @@ jobs:
           name: php-micro-${{ inputs.php-version }}-windows
           path: static-php-cli/buildroot/bin/micro.sfx
 
-      # Upload extensions metadata
       - uses: actions/upload-artifact@v4
         name: "Upload License files"
         with:
           name: license-files-${{ inputs.php-version }}-windows
           path: static-php-cli/buildroot/license/
+
       - uses: actions/upload-artifact@v4
         name: "Upload Build metadata"
         with:

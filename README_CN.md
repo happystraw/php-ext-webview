@@ -45,6 +45,15 @@ make install
 
 按照 [PHP Extensions](https://github.com/php/php-windows-builder?tab=readme-ov-file#php-extensions) 指南在 Windows 上构建 PHP 扩展。
 
+## 使用 GitHub Actions 自动构建
+
+为了更便捷的构建和分发，你可以 fork 本仓库并使用本仓库中预配置的 GitHub Actions 工作流来自动构建包含 webview 扩展的 PHP CLI/Micro 可执行文件。
+
+### 可用的工作流
+
+- **Build for Unix**：为 Linux（x86_64, aarch64）和 macOS（x86_64, aarch64）构建静态 PHP CLI/Micro 可执行文件
+- **Build for Windows**：为 Windows (x86_64) 构建静态 PHP CLI/Micro 可执行文件
+
 ## 单文件应用程序
 
 通过将此扩展与 [static-php-cli](https://github.com/crazywhalecc/static-php-cli) 和 [phpmicro](https://github.com/dixyes/phpmicro) 结合使用，创建独立的可执行应用程序。这种方法将 PHP、webview 扩展和您的应用程序代码打包到一个可执行文件中。

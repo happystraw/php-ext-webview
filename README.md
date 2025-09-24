@@ -45,6 +45,15 @@ make install
 
 Follow the [PHP Extensions](https://github.com/php/php-windows-builder?tab=readme-ov-file#php-extensions) guide for building PHP extensions on Windows.
 
+## Automated Building with GitHub Actions
+
+For easier building and distribution, you can fork this repository and use the pre-configured GitHub Actions workflows in this repository to build PHP CLI/Micro executables with the webview extension automatically.
+
+### Available Workflows
+
+- **Build for Unix**: Builds static PHP CLI/Micro executables for Linux (x86_64, aarch64) and macOS (x86_64, aarch64)
+- **Build for Windows**: Builds static PHP CLI/Micro executables for Windows (x86_64)
+
 ## Single-File Applications
 
 Create standalone executable applications by combining this extension with [static-php-cli](https://github.com/crazywhalecc/static-php-cli) and [phpmicro](https://github.com/dixyes/phpmicro). This approach bundles PHP, the webview extension, and your application code into a single executable file.

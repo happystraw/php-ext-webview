@@ -124,10 +124,11 @@ if (isset($argv[1]) && $argv[1] === 'server') {
     echo '[main] Starting server in background...' . PHP_EOL;
 
     $isWindows = PHP_OS_FAMILY === 'Windows';
-    $php = PHP_BINARY;
-    $cmd = $isWindows
-        ? ($php . ' ' . __FILE__ . ' server')
-        : ($php . ' ' . escapeshellarg(__FILE__) . ' server');
+    if (PHP_SAPI === 'micro') {
+        $cmd = $_SERVER['PHP_SELF'] . ' server';
+    } else {
+        $cmd = PHP_BINARY . ' ' . __FILE__ . ' server';
+    }
 
     // use proc_open to start the http server in background
     $descriptorSpec = [
@@ -135,7 +136,6 @@ if (isset($argv[1]) && $argv[1] === 'server') {
         // 1 => ['pipe', 'w'],
         // 2 => ['pipe', 'w'],
     ];
-    // fixme: sapi micro should customize the script to run it self in the background
     $options = $isWindows ? ['bypass_shell' => true] : [];
     $process = proc_open($cmd, $descriptorSpec, $pipes, options: $options);
     // wait for the server to start

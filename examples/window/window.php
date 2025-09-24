@@ -42,7 +42,10 @@ $w->bind('logStatus', function() use ($w) {
     echo "- Visible: " . ($w->isVisible() ? 'Yes' : 'No') . "\n";
     echo "------------------------\n";
 });
-$w->setHtml(<<<'HTML'
+$w->setHtml((string)file_get_contents(__FILE__, offset: __COMPILER_HALT_OFFSET__));
+$w->run();
+
+__halt_compiler();
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -137,6 +140,3 @@ $w->setHtml(<<<'HTML'
     </script>
 </body>
 </html>
-HTML
-);
-$w->run();

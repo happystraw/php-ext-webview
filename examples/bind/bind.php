@@ -28,7 +28,10 @@ $w->bind('hello', function (string $id, string $req): string {
     return \json_encode(['message' => 'Hello ' . $name . '. This is a message from PHP.']);
 });
 
-$w->setHtml(<<<'HTML'
+$w->setHtml((string)file_get_contents(__FILE__, offset: __COMPILER_HALT_OFFSET__));
+$w->run();
+
+__halt_compiler();
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,6 +66,3 @@ $w->setHtml(<<<'HTML'
     </script>
 </body>
 </html>
-HTML);
-
-$w->run();

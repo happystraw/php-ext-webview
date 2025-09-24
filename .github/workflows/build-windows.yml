@@ -155,7 +155,8 @@ jobs:
 
       # Fetch sources, with or without debug
       - name: "Download sources"
-        run:
+        shell: bash
+        run: |
           cd static-php-cli
           ./bin/spc download --with-php="${{ inputs.php-version }}" --for-extensions="${{ inputs.extensions }}" ${{ env.SPC_BUILD_DEBUG }} ${{ env.SPC_PRE_BUILT }}
           ./bin/spc install-pkg upx

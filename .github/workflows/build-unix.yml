@@ -116,7 +116,7 @@ jobs:
               BUILD_CMD="$BUILD_CMD --build-micro"
           fi
 
-          if [ ${{ inputs.with-upx-pack }} == true ]; then
+          if [[ ${{ inputs.os }} == linux* ]] && [ ${{ inputs.with-upx-pack }} == true ]; then
               BUILD_CMD="$BUILD_CMD --with-upx-pack"
           fi
 
@@ -197,7 +197,14 @@ jobs:
       - name: "Generate cache key"
         shell: bash
         run: |
-          INPUT_HASH=$(echo "${{ inputs.os }}-${{ inputs.php-version }}-${{ inputs.extensions }}-webview-${{ github.sha }}" | sha256sum | awk '{print $1}')
+          # Use platform-appropriate hash command
+          if command -v sha256sum >/dev/null 2>&1; then
+            # Linux
+            INPUT_HASH=$(echo "${{ inputs.os }}-${{ inputs.php-version }}-${{ inputs.extensions }}-webview-${{ github.sha }}" | sha256sum | awk '{print $1}')
+          else
+            # macOS
+            INPUT_HASH=$(echo "${{ inputs.os }}-${{ inputs.php-version }}-${{ inputs.extensions }}-webview-${{ github.sha }}" | shasum -a 256 | awk '{print $1}')
+          fi
           echo "INPUT_HASH=${INPUT_HASH}" >> "$GITHUB_ENV"
 
       # Cache downloaded source
@@ -210,11 +217,7 @@ jobs:
 
       - name: "Download sources"
         working-directory: static-php-cli
-        run: |
-          ${{ needs.define-build.outputs.download }}
-          if [[ ${{ inputs.os }} == linux* ]] && [[ ${{ inputs.with-upx-pack }} == true ]]; then
-            ./bin/spc install-pkg upx
-          fi
+        run: ${{ needs.define-build.outputs.download }}
 
       - name: "Run doctor"
         working-directory: static-php-cli
@@ -229,6 +232,9 @@ jobs:
           sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
           # Install Zig compiler
           ./bin/spc install-pkg zig
+          if [[ ${{ inputs.os }} == linux* ]] && [[ ${{ inputs.with-upx-pack }} == true ]]; then
+            ./bin/spc install-pkg upx
+          fi
 
       - name: "Build PHP"
         working-directory: static-php-cli

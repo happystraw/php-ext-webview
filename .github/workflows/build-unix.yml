@@ -19,6 +19,7 @@ on:
         default: '8.4'
         type: choice
         options:
+          - '8.5'
           - '8.4'
           - '8.3'
       extensions:
@@ -30,19 +31,23 @@ on:
         description: Extra libraries to build (optional, comma separated)
         type: string
       build-cli:
-        description: Build cli binary
+        description: Build for cli binary
         default: true
         type: boolean
       build-micro:
-        description: Build phpmicro binary
+        description: Build for phpmicro binary
         default: true
         type: boolean
-      prefer-pre-built:
-        description: Prefer pre-built binaries (reduce build time)
+      enable-zts:
+        description: Enable ZTS
         type: boolean
-        default: true
+        default: false
+      # prefer-pre-built:
+      #   description: Prefer pre-built binaries (reduce build time)
+      #   type: boolean
+      #   default: true
       debug:
-        description: Show full build logs
+        description: Display full build logs
         type: boolean
         default: true
       no-strip:
@@ -104,9 +109,9 @@ jobs:
             FIX_CMD="$FIX_CMD --debug"
           fi
 
-          if [ ${{ inputs.prefer-pre-built }} == true ]; then
-              DOWN_CMD="$DOWN_CMD --prefer-pre-built"
-          fi
+          # if [ ${{ inputs.prefer-pre-built }} == true ]; then
+          DOWN_CMD="$DOWN_CMD --prefer-pre-built"
+          # fi
 
           if [ ${{ inputs.build-cli }} == true ]; then
               BUILD_CMD="$BUILD_CMD --build-cli"
@@ -114,6 +119,10 @@ jobs:
 
           if [ ${{ inputs.build-micro }} == true ]; then
               BUILD_CMD="$BUILD_CMD --build-micro"
+          fi
+
+          if [ ${{ inputs.enable-zts }} == true ]; then
+              BUILD_CMD="$BUILD_CMD --enable-zts"
           fi
 
           if [[ ${{ inputs.os }} == linux* ]] && [ ${{ inputs.with-upx-pack }} == true ]; then
@@ -232,7 +241,7 @@ jobs:
           sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
           # Install Zig compiler
           ./bin/spc install-pkg zig
-          if [[ ${{ inputs.os }} == linux* ]] && [[ ${{ inputs.with-upx-pack }} == true ]]; then
+          if [[ ${{ inputs.with-upx-pack }} == true ]]; then
             ./bin/spc install-pkg upx
           fi
 

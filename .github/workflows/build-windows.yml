@@ -9,6 +9,7 @@ on:
         default: '8.4'
         type: choice
         options:
+          - '8.5'
           - '8.4'
           - '8.3'
       build-cli:
@@ -23,6 +24,10 @@ on:
         description: Enable micro win32
         default: true
         type: boolean
+      enable-zts:
+        description: Enable ZTS
+        type: boolean
+        default: false
       extensions:
         description: Extensions to compile (comma separated)
         required: true
@@ -31,12 +36,12 @@ on:
       extra-libs:
         description: Extra libraries to build (optional, comma separated)
         type: string
-      prefer-pre-built:
-        description: Prefer pre-built binaries (reduce build time)
-        type: boolean
-        default: true
+      # prefer-pre-built:
+      #   description: Prefer pre-built binaries (reduce build time)
+      #   type: boolean
+      #   default: true
       debug:
-        description: Enable debug logs
+        description: Display full build logs
         type: boolean
         default: true
       with-upx-pack:
@@ -136,42 +141,61 @@ jobs:
           path: static-php-cli/downloads
           key: php-dependencies-windows-php-${{ inputs.php-version }}-${{ env.INPUT_HASH }}
 
-      - if: inputs.debug == true
-        name: "Enable debug"
-        run: echo "SPC_BUILD_DEBUG=--debug" >> $env:GITHUB_ENV
-
-      - if: inputs.prefer-pre-built == true
-        name: "Enable prefer pre-built"
-        run: echo "SPC_PRE_BUILT=--prefer-pre-built" >> $env:GITHUB_ENV
-
-      - if: inputs.with-upx-pack == true
-        name: "Enable upx pack"
-        run: echo "SPC_UPX_PACK=--with-upx-pack" >> $env:GITHUB_ENV
-
       - if: ${{ inputs.build-cli == true }}
-        name: "Enable build cli"
+        name: "Build for cli binary"
         run: echo "SPC_BUILD_CLI=--build-cli" >> $env:GITHUB_ENV
 
       - if: ${{ inputs.build-micro == true }}
-        name: "Enable build micro"
+        name: "Build for micro binary"
         run: echo "SPC_BUILD_MICRO=--build-micro" >> $env:GITHUB_ENV
 
+      - if: inputs.debug == true
+        name: "[Optional] Display full build logs"
+        run: echo "SPC_DEBUG=--debug" >> $env:GITHUB_ENV
+
+      # - if: inputs.prefer-pre-built == true
+      - name: "[Optional] Prefer pre-built binaries"
+        run: echo "SPC_PRE_BUILT=--prefer-pre-built" >> $env:GITHUB_ENV
+
+      - if: inputs.with-upx-pack == true
+        name: "[Optional] Pack with UPX"
+        run: echo "SPC_UPX_PACK=--with-upx-pack" >> $env:GITHUB_ENV
+
       - if: inputs.enable-micro-win32 == true
-        name: "Enable micro win32"
+        name: "[Optional] Enable micro win32"
         run: echo "SPC_ENABLE_MICRO_WIN32=--enable-micro-win32" >> $env:GITHUB_ENV
 
-      - name: "Run doctor"
-        run: cd static-php-cli && ./bin/spc doctor --auto-fix
+      - if: inputs.enable-zts == true
+        name: "[Optional] Enable zts"
+        run: echo "SPC_ENABLE_ZTS=--enable-zts" >> $env:GITHUB_ENV
 
-      - name: "Download sources"
+      - name: "Run doctor"
         shell: bash
         run: |
           cd static-php-cli
-          ./bin/spc download --with-php="${{ inputs.php-version }}" --for-extensions="${{ inputs.extensions }}" ${{ env.SPC_BUILD_DEBUG }} ${{ env.SPC_PRE_BUILT }}
+          ./bin/spc doctor --auto-fix
+
+      - name: "Download sources"
+        shell: bash
+        working-directory: static-php-cli
+        run: |
+          ./bin/spc download --with-php="${{ inputs.php-version }}" \
+            --for-extensions="${{ inputs.extensions }}" \
+            ${{ env.SPC_DEBUG }} \
+            ${{ env.SPC_PRE_BUILT }}
           ./bin/spc install-pkg upx
 
       - name: "Build PHP"
-        run: cd static-php-cli && ./bin/spc build "${{ inputs.extensions }}" ${{ env.SPC_BUILD_DEBUG }} ${{ env.SPC_BUILD_CLI }} ${{ env.SPC_BUILD_MICRO }} ${{ env.SPC_UPX_PACK }} ${{ env.SPC_ENABLE_MICRO_WIN32 }}
+        shell: bash
+        working-directory: static-php-cli
+        run: |
+          ./bin/spc build "${{ inputs.extensions }}" \
+            ${{ env.SPC_BUILD_CLI }} \
+            ${{ env.SPC_BUILD_MICRO }} \
+            ${{ env.SPC_DEBUG }} \
+            ${{ env.SPC_UPX_PACK }} \
+            ${{ env.SPC_ENABLE_MICRO_WIN32 }} \
+            ${{ env.SPC_ENABLE_ZTS }}
 
       - if: ${{ inputs.build-cli == true }}
         name: "Upload PHP cli executable"

@@ -6,36 +6,36 @@ on:
       os:
         required: true
         description: Build target OS
-        default: 'linux-x86_64'
+        default: "linux-x86_64"
         type: choice
         options:
-          - 'macos-x86_64'
-          - 'macos-aarch64'
-          - 'linux-x86_64'
-          - 'linux-aarch64'
+          - "macos-x86_64"
+          - "macos-aarch64"
+          - "linux-x86_64"
+          - "linux-aarch64"
       php-version:
         required: true
         description: PHP version to compile
-        default: '8.4'
+        default: "8.4"
         type: choice
         options:
-          - '8.5'
-          - '8.4'
-          - '8.3'
+          - "8.5"
+          - "8.4"
+          - "8.3"
       extensions:
         description: Extensions to build (comma separated)
         required: true
         type: string
-        default: 'webview'
+        default: "webview"
       extra-libs:
         description: Extra libraries to build (optional, comma separated)
         type: string
       build-cli:
-        description: Build for cli binary
+        description: Build for php cli binary
         default: true
         type: boolean
       build-micro:
-        description: Build for phpmicro binary
+        description: Build for php micro binary
         default: true
         type: boolean
       enable-zts:
@@ -59,7 +59,7 @@ on:
         type: boolean
         default: true
 env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   define-build:

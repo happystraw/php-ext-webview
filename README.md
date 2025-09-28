@@ -8,6 +8,7 @@ Perfect for building single-file GUI applications when combined with [static-php
 
 ## Features
 
+- **Support for PHP**: 8.3, 8.4, 8.5
 - **Cross-platform**: Native support for Windows, macOS, and Linux
 - **Lightweight**: Minimal overhead with native webview components
 - **Window Management**:

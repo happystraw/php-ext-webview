@@ -1,4 +1,4 @@
-#include "webview/webview.h"
+#include "webview_window.h"
 
 /// Window state control functions
 
@@ -63,7 +63,8 @@ typedef int NSInteger;
 #endif /* __LINUX__ */
 
 // Window state control functions
-WEBVIEW_API webview_error_t webview_window_maximize(webview_t w) {
+WEBVIEW_API webview_error_t webview_window_maximize(webview_t w)
+{
     if (!w) return WEBVIEW_ERROR_INVALID_STATE;
 
 #ifdef _WIN32
@@ -102,7 +103,8 @@ WEBVIEW_API webview_error_t webview_window_maximize(webview_t w) {
 #endif
 }
 
-WEBVIEW_API webview_error_t webview_window_minimize(webview_t w) {
+WEBVIEW_API webview_error_t webview_window_minimize(webview_t w)
+{
     if (!w) return WEBVIEW_ERROR_INVALID_STATE;
 
 #ifdef _WIN32
@@ -132,7 +134,8 @@ WEBVIEW_API webview_error_t webview_window_minimize(webview_t w) {
 #endif
 }
 
-WEBVIEW_API webview_error_t webview_window_unmaximize(webview_t w) {
+WEBVIEW_API webview_error_t webview_window_unmaximize(webview_t w)
+{
     if (!w) return WEBVIEW_ERROR_INVALID_STATE;
 
 #ifdef _WIN32
@@ -172,7 +175,8 @@ WEBVIEW_API webview_error_t webview_window_unmaximize(webview_t w) {
 #endif
 }
 
-WEBVIEW_API webview_error_t webview_window_unminimize(webview_t w) {
+WEBVIEW_API webview_error_t webview_window_unminimize(webview_t w)
+{
     if (!w) return WEBVIEW_ERROR_INVALID_STATE;
 
 #ifdef _WIN32
@@ -217,7 +221,8 @@ WEBVIEW_API webview_error_t webview_window_unminimize(webview_t w) {
 #endif
 }
 
-WEBVIEW_API webview_error_t webview_window_fullscreen(webview_t w) {
+WEBVIEW_API webview_error_t webview_window_fullscreen(webview_t w)
+{
     if (!w) return WEBVIEW_ERROR_INVALID_STATE;
 
 #ifdef _WIN32
@@ -275,7 +280,8 @@ WEBVIEW_API webview_error_t webview_window_fullscreen(webview_t w) {
 #endif
 }
 
-WEBVIEW_API webview_error_t webview_window_unfullscreen(webview_t w) {
+WEBVIEW_API webview_error_t webview_window_unfullscreen(webview_t w)
+{
     if (!w) return WEBVIEW_ERROR_INVALID_STATE;
 
 #ifdef _WIN32
@@ -324,7 +330,8 @@ WEBVIEW_API webview_error_t webview_window_unfullscreen(webview_t w) {
 #endif
 }
 
-WEBVIEW_API webview_error_t webview_window_hide(webview_t w) {
+WEBVIEW_API webview_error_t webview_window_hide(webview_t w)
+{
     if (!w) return WEBVIEW_ERROR_INVALID_STATE;
 
 #ifdef _WIN32
@@ -383,7 +390,8 @@ WEBVIEW_API webview_error_t webview_window_hide(webview_t w) {
 #endif
 }
 
-WEBVIEW_API webview_error_t webview_window_show(webview_t w) {
+WEBVIEW_API webview_error_t webview_window_show(webview_t w)
+{
     if (!w) return WEBVIEW_ERROR_INVALID_STATE;
 
 #ifdef _WIN32
@@ -448,7 +456,8 @@ WEBVIEW_API webview_error_t webview_window_show(webview_t w) {
 }
 
 // Window state query functions
-WEBVIEW_API webview_error_t webview_window_is_fullscreen(webview_t w, int *result) {
+WEBVIEW_API webview_error_t webview_window_is_fullscreen(webview_t w, int *result)
+{
     if (!w || !result) return WEBVIEW_ERROR_INVALID_ARGUMENT;
 
 #ifdef _WIN32
@@ -552,7 +561,8 @@ WEBVIEW_API webview_error_t webview_window_is_maximized(webview_t w, int *result
 #endif
 }
 
-WEBVIEW_API webview_error_t webview_window_is_minimized(webview_t w, int *result) {
+WEBVIEW_API webview_error_t webview_window_is_minimized(webview_t w, int *result)
+{
     if (!w || !result) return WEBVIEW_ERROR_INVALID_ARGUMENT;
 
 #ifdef _WIN32
@@ -604,7 +614,8 @@ WEBVIEW_API webview_error_t webview_window_is_minimized(webview_t w, int *result
 #endif
 }
 
-WEBVIEW_API webview_error_t webview_window_is_visible(webview_t w, int *result) {
+WEBVIEW_API webview_error_t webview_window_is_visible(webview_t w, int *result)
+{
     if (!w || !result) return WEBVIEW_ERROR_INVALID_ARGUMENT;
 
 #ifdef _WIN32

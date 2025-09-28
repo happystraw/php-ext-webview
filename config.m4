@@ -107,8 +107,10 @@ if test "$PHP_WEBVIEW" != "no"; then
 
   dnl Set dependencies header directory
   if test -z PHP_EXT_DIR(webview); then
+    PHP_ADD_INCLUDE(./src)
     PHP_ADD_INCLUDE(./deps)
   else
+    PHP_ADD_INCLUDE(PHP_EXT_DIR(webview)/src)
     PHP_ADD_INCLUDE(PHP_EXT_DIR(webview)/deps)
   fi
 
@@ -118,7 +120,7 @@ if test "$PHP_WEBVIEW" != "no"; then
   dnl Substitute shared library dependencies
   PHP_SUBST(WEBVIEW_SHARED_LIBADD)
 
-  PHP_WEBVIEW_SOURCES="webview.c window.c"
+  PHP_WEBVIEW_SOURCES="webview.c src/webview_error.c src/webview_bind.c src/webview_window.c"
   PHP_NEW_EXTENSION(webview, $PHP_WEBVIEW_SOURCES, $ext_shared,,-DZEND_ENABLE_STATIC_TSRMLS_CACHE=1, cxx)
   PHP_ADD_EXTENSION_DEP(webview, json)
 

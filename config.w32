@@ -132,11 +132,8 @@ if (PHP_WEBVIEW != 'no') {
 		// Note: Using 'webview.c' as primary source, 'libwebview.cc' for C++ code
 		if (FSO.FileExists(configure_module_dirname + "\\webview.c") &&
 		    FSO.FileExists(configure_module_dirname + "\\libwebview.cc")) {
-			EXTENSION('webview', 'webview.c window.c libwebview.cc', PHP_WEBVIEW_SHARED, null, null, 'cxx');
-			STDOUT.WriteLine("Registered extension with webview.c, window.c, and libwebview.cc sources");
-		} else if (FSO.FileExists(configure_module_dirname + "\\webview.c")) {
-			EXTENSION('webview', 'webview.c window.c', PHP_WEBVIEW_SHARED, null, null, 'cxx');
-			STDOUT.WriteLine("Registered extension with webview.c and window.c sources");
+			EXTENSION('webview', 'webview.c src/webview_error.c src/webview_bind.c src/webview_window.c libwebview.cc', PHP_WEBVIEW_SHARED, null, null, 'cxx');
+			STDOUT.WriteLine("Registered extension with webview.c, src/*.c, and libwebview.cc sources");
 		} else {
 			ERROR("webview.c not found in: " + configure_module_dirname);
 		}

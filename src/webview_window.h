@@ -1,5 +1,5 @@
-#ifndef WEBVIEW_WINDOW_H
-#define WEBVIEW_WINDOW_H
+#ifndef PHP_WEBVIEW_WINDOW_H
+#define PHP_WEBVIEW_WINDOW_H
 
 #include "webview/webview.h"
 
@@ -25,4 +25,4 @@ WEBVIEW_API webview_error_t webview_window_is_visible(webview_t w, int *result);
 } /* extern "C" */
 #endif
 
-#endif // WEBVIEW_WINDOW_H
+#endif /* PHP_WEBVIEW_WINDOW_H */

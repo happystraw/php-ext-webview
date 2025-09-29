@@ -119,7 +119,7 @@ if (PHP_WEBVIEW != 'no') {
 		ADD_FLAG("CFLAGS_WEBVIEW", "/std:c++14 /EHsc");
 
 		// Enable Windows API definitions
-		ADD_FLAG("CFLAGS_WEBVIEW", "/DWIN32_LEAN_AND_MEAN /DNOMINMAX");
+		ADD_FLAG("CFLAGS_WEBVIEW", "/DNOMINMAX");
 
 		// Static runtime linking for better distribution (optional, can be removed if problematic)
 		if (PHP_DEBUG == "no") {
@@ -135,7 +135,7 @@ if (PHP_WEBVIEW != 'no') {
 		// Note: Using 'webview.c' as primary source, 'libwebview.cc' for C++ code
 		if (FSO.FileExists(configure_module_dirname + "\\webview.c") &&
 		    FSO.FileExists(configure_module_dirname + "\\libwebview.cc")) {
-			EXTENSION('webview', 'webview.c src/webview_error.c src/webview_bind.c src/webview_window.c libwebview.cc', PHP_WEBVIEW_SHARED, null, null, 'cxx');
+			EXTENSION('webview', "webview.c src\\webview_error.c src\\webview_bind.c src\\webview_window.c libwebview.cc", PHP_WEBVIEW_SHARED, null, null, 'cxx');
 			STDOUT.WriteLine("Registered extension with webview.c, src/*.c, and libwebview.cc sources");
 		} else {
 			ERROR("webview.c not found in: " + configure_module_dirname);

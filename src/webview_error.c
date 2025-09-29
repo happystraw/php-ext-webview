@@ -1,8 +1,5 @@
-#include "zend_API.h"
-#include "zend_exceptions.h"
-#include "php_webview.h"
-
 #include "webview_error.h"
+#include "zend_exceptions.h"
 
 WEBVIEW_API const char *webview_error_to_string(webview_error_t error)
 {
@@ -26,11 +23,11 @@ WEBVIEW_API const char *webview_error_to_string(webview_error_t error)
     }
 }
 
-WEBVIEW_API void php_webview_throw_exception(webview_error_t error, const char *message)
+WEBVIEW_API void php_webview_throw_exception(zend_class_entry *exception_ce, webview_error_t error, const char *message)
 {
     char full_message[512];
     const char *error_name = webview_error_to_string(error);
     snprintf(full_message, sizeof(full_message), "[%s (%d)] %s", error_name, error, message ? message : "");
-    zend_throw_exception_ex(webview_exception_ce, error, "%s", full_message);
+    zend_throw_exception_ex(exception_ce, error, "%s", full_message);
 }
 

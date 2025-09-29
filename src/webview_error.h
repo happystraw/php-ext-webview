@@ -7,8 +7,10 @@
 extern "C" {
 #endif
 
+#include "zend_API.h"
+
 WEBVIEW_API const char *webview_error_to_string(webview_error_t error);
-WEBVIEW_API void php_webview_throw_exception(webview_error_t error, const char *message);
+WEBVIEW_API void php_webview_throw_exception(zend_class_entry *exception_ce, webview_error_t error, const char *message);
 
 #if defined(__cplusplus)
 } /* extern "C" */

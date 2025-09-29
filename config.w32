@@ -75,6 +75,9 @@ if (PHP_WEBVIEW != 'no') {
 		ADD_FLAG("CFLAGS_WEBVIEW", "/I " + configure_module_dirname + "\\deps");
 		ADD_FLAG("CFLAGS_WEBVIEW", "/I " + configure_module_dirname + "\\deps\\webview");
 
+        // Add source directory for src/*.h
+        ADD_FLAG("CFLAGS_WEBVIEW", "/I " + configure_module_dirname + "\\src");
+
 		// WebView2 library configuration
 		if (webview2_lib_path) {
 			// Determine architecture

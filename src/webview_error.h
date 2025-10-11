@@ -1,5 +1,5 @@
-#ifndef PHP_PHP_WEBVIEW_ERROR_H
-#define PHP_PHP_WEBVIEW_ERROR_H
+#ifndef PHP_WEBVIEW_ERROR_H
+#define PHP_WEBVIEW_ERROR_H
 
 #include "webview/webview.h"
 
@@ -16,4 +16,4 @@ WEBVIEW_API void php_webview_throw_exception(zend_class_entry *exception_ce, web
 } /* extern "C" */
 #endif
 
-#endif /* PHP_PHP_WEBVIEW_ERROR_H */
+#endif /* PHP_WEBVIEW_ERROR_H */

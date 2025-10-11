@@ -5,6 +5,7 @@ CompileFlags:
         - -xc++
 
         # PHP include paths
+        # cwd: /path/to/php-8.3-debug/ext/webview
         - -I./../../include/php
         - -I./../../include/php/main
         - -I./../../include/php/TSRM
@@ -14,32 +15,53 @@ CompileFlags:
 
         # Project include paths
         - -I.
-        - -Ideps
+        - -I./deps
+        - -I./src
 
         # WebKitGTK include paths (Linux)
-        - -I/usr/include/webkitgtk-4.1
-        - -I/usr/include/gtk-3.0
+        - -I/usr/include/webkitgtk-6.0
+        - -I/usr/include/gtk-4.0
         - -I/usr/include/pango-1.0
-        - -I/usr/include/cloudproviders
-        - -I/usr/include/cairo
-        - -I/usr/include/gdk-pixbuf-2.0
-        - -I/usr/include/at-spi2-atk/2.0
-        - -I/usr/include/at-spi-2.0
-        - -I/usr/include/atk-1.0
-        - -I/usr/include/dbus-1.0
-        - -I/usr/lib/dbus-1.0/include
         - -I/usr/include/fribidi
-        - -I/usr/include/pixman-1
         - -I/usr/include/harfbuzz
+        - -I/usr/include/gdk-pixbuf-2.0
+        - -I/usr/include/glycin-2
+        - -I/usr/include/cairo
         - -I/usr/include/freetype2
         - -I/usr/include/libpng16
-        - -I/usr/include/gio-unix-2.0
+        - -I/usr/include/pixman-1
+        - -I/usr/include/graphene-1.0
+        - -I/usr/lib/graphene-1.0/include
         - -I/usr/include/libsoup-3.0
         - -I/usr/include/libmount
         - -I/usr/include/blkid
         - -I/usr/include/glib-2.0
         - -I/usr/lib/glib-2.0/include
         - -I/usr/include/sysprof-6
+
+        # - -I/usr/include/webkitgtk-4.1
+        # - -I/usr/include/gtk-3.0
+        # - -I/usr/include/pango-1.0
+        # - -I/usr/include/cloudproviders
+        # - -I/usr/include/cairo
+        # - -I/usr/include/gdk-pixbuf-2.0
+        # - -I/usr/include/at-spi2-atk/2.0
+        # - -I/usr/include/at-spi-2.0
+        # - -I/usr/include/atk-1.0
+        # - -I/usr/include/dbus-1.0
+        # - -I/usr/lib/dbus-1.0/include
+        # - -I/usr/include/fribidi
+        # - -I/usr/include/pixman-1
+        # - -I/usr/include/harfbuzz
+        # - -I/usr/include/freetype2
+        # - -I/usr/include/libpng16
+        # - -I/usr/include/gio-unix-2.0
+        # - -I/usr/include/libsoup-3.0
+        # - -I/usr/include/libmount
+        # - -I/usr/include/blkid
+        # - -I/usr/include/glib-2.0
+        # - -I/usr/lib/glib-2.0/include
+        # - -I/usr/include/sysprof-6
 
         # Preprocessor definitions
         - -DHAVE_CONFIG_H
@@ -76,6 +98,7 @@ Diagnostics:
             - bugprone-*
         Remove:
             - bugprone-easily-swappable-parameters
+            - bugprone-implicit-widening-of-multiplication-result
     UnusedIncludes: Strict
     MissingIncludes: None
 

@@ -47,4 +47,5 @@ configure~
 /.idea
 /*.lua
 # /.clangd
-/.clang-format
+/compile_flags.txt
+# /.clang-format

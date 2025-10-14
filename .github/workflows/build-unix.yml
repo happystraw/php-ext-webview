@@ -224,6 +224,36 @@ jobs:
           path: static-php-cli/downloads
           key: php-dependencies-${{ inputs.os }}-${{ inputs.php-version }}-${{ env.INPUT_HASH }}
 
+      - name: "Setup Linux"
+        if: startsWith(inputs.os, 'linux')
+        working-directory: static-php-cli
+        run: |
+          # Install GTK and WebKitGTK development packages
+          sudo apt-get update
+          sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+
+          # Setup Linux build environment variables
+          echo "SPC_TARGET=native-native" >> $GITHUB_ENV
+
+          # Only export webview-specific variables if webview extension is included
+          if [[ "${{ inputs.extensions }}" == *"webview"* ]]; then
+            echo "SPC_EXTRA_LIBS=$(pkg-config --libs gtk4 webkitgtk-6.0)" >> $GITHUB_ENV
+            echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig" >> $GITHUB_ENV
+            echo "🔧 Linux build environment variables exported (with webview support):"
+            echo "  SPC_TARGET=native-native"
+            echo "  SPC_EXTRA_LIBS=$(pkg-config --libs gtk4 webkitgtk-6.0)"
+            echo "  PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+          else
+            echo "🔧 Linux build environment variables exported (without webview):"
+            echo "  SPC_TARGET=native-native"
+          fi
+
+          # Install Zig compiler
+          ./bin/spc install-pkg zig
+          if [[ ${{ inputs.with-upx-pack }} == true ]]; then
+            ./bin/spc install-pkg upx
+          fi
+
       - name: "Download sources"
         working-directory: static-php-cli
         run: ${{ needs.define-build.outputs.download }}
@@ -232,32 +262,9 @@ jobs:
         working-directory: static-php-cli
         run: ${{ needs.define-build.outputs.fix }}
 
-      - name: "Install Linux dependencies"
-        if: startsWith(inputs.os, 'linux')
-        working-directory: static-php-cli
-        run: |
-          # Install GTK and WebKitGTK development packages
-          sudo apt-get update
-          sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
-          # Install Zig compiler
-          ./bin/spc install-pkg zig
-          if [[ ${{ inputs.with-upx-pack }} == true ]]; then
-            ./bin/spc install-pkg upx
-          fi
-
       - name: "Build PHP"
         working-directory: static-php-cli
-        run: |
-          if [[ ${{ inputs.os }} == linux* ]]; then
-            export SPC_TARGET="native-native"
-            export SPC_EXTRA_LIBS="$(pkg-config --libs gtk4 webkitgtk-6.0)"
-            export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
-            echo "🔧 Linux build environment:"
-            echo "  SPC_TARGET=$SPC_TARGET"
-            echo "  SPC_EXTRA_LIBS=$SPC_EXTRA_LIBS"
-            echo "  PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-          fi
-          ${{ needs.define-build.outputs.build }}
+        run: ${{ needs.define-build.outputs.build }}
 
       # Upload cli executable
       - if: ${{ inputs.build-cli == true }}

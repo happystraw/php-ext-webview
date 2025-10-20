@@ -232,17 +232,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
 
+          # Copy pkg-config files to "ext_webview_deps_pc_dir" directory
+          EXT_WEBVIEW_DEPS_PC_DIR="$(pwd)/ext_webview_deps_pc_dir"
+          ../scripts/copy-pkgconfig.sh --dir "${EXT_WEBVIEW_DEPS_PC_DIR}"
+
           # Setup Linux build environment variables
           echo "SPC_TARGET=native-native" >> $GITHUB_ENV
 
           # Only export webview-specific variables if webview extension is included
           if [[ "${{ inputs.extensions }}" == *"webview"* ]]; then
             echo "SPC_EXTRA_LIBS=$(pkg-config --libs gtk4 webkitgtk-6.0)" >> $GITHUB_ENV
-            echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig" >> $GITHUB_ENV
+            echo "PKG_CONFIG_PATH=${EXT_WEBVIEW_DEPS_PC_DIR}" >> $GITHUB_ENV
             echo "🔧 Linux build environment variables exported (with webview support):"
             echo "  SPC_TARGET=native-native"
             echo "  SPC_EXTRA_LIBS=$(pkg-config --libs gtk4 webkitgtk-6.0)"
-            echo "  PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+            echo "  PKG_CONFIG_PATH=${EXT_WEBVIEW_DEPS_PC_DIR}"
           else
             echo "🔧 Linux build environment variables exported (without webview):"
             echo "  SPC_TARGET=native-native"

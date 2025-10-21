@@ -21,6 +21,58 @@ Perfect for building single-file GUI applications when combined with [static-php
 
 > **API Reference**: See [webview.stub.php](./webview.stub.php) for complete method documentation.
 
+## Quick Start
+
+To quickly experience the webview extension, you can download pre-built PHP executables from the [Releases](https://github.com/happystraw/php-ext-webview/releases) page.
+
+> This build only includes a few extensions. For more functionality, please refer to the source build and GitHub Actions build below.
+
+### Linux/macOS
+
+**CLI:**
+
+```bash
+# 1. Download the corresponding architecture php-cli-8.4-*.zip
+# 2. Extract and set execution permissions
+# 3. Run examples
+chmod +x ./php
+./php examples/basic.php
+```
+
+**Micro:**
+
+```bash
+# 1. Download the corresponding architecture php-micro-8.4-*.zip
+# 2. Extract and set execution permissions
+# 3. Merge into single file program and run
+cat micro.sfx examples/basic.php > basic
+chmod +x basic
+./basic
+```
+
+### Windows
+
+> **Note**: Windows version uses UPX compression and may trigger antivirus alerts. Please add to trust list or build from source.
+
+**CLI:**
+
+```cmd
+REM 1. Download the corresponding architecture php-cli-8.4-windows-*.zip
+REM 2. Extract to any directory
+REM 3. Run examples
+.\php.exe examples\basic.php
+```
+
+**Micro:**
+
+```cmd
+REM 1. Download the corresponding architecture php-micro-8.4-windows-*.zip
+REM 2. Extract to any directory
+REM 3. Merge into single file program and run
+COPY /b micro.sfx examples\basic.php basic.exe
+.\basic.exe
+```
+
 ## Building from Source
 
 ### Prerequisites
@@ -46,151 +98,17 @@ make install
 
 Follow the [PHP Extensions](https://github.com/php/php-windows-builder?tab=readme-ov-file#php-extensions) guide for building PHP extensions on Windows.
 
-## Automated Building with GitHub Actions
+## Building with GitHub Actions
 
-For easier building and distribution, you can fork this repository and use the pre-configured GitHub Actions workflows in this repository to build PHP CLI/Micro executables with the webview extension automatically.
+For easier building and distribution, you can fork this repository and use the pre-configured GitHub Actions workflows in this repository to automatically build PHP CLI/Micro executables with the webview extension.
 
 ### Available Workflows
 
 - **Build for Unix**: Builds static PHP CLI/Micro executables for Linux (x86_64, aarch64) and macOS (x86_64, aarch64)
 - **Build for Windows**: Builds static PHP CLI/Micro executables for Windows (x86_64)
 
-## Single-File Applications
+## Static PHP CLI/Micro Build
 
-Create standalone executable applications by combining this extension with [static-php-cli](https://github.com/crazywhalecc/static-php-cli) and [phpmicro](https://github.com/dixyes/phpmicro). This approach bundles PHP, the webview extension, and your application code into a single executable file.
+You can use [static-php-cli](https://github.com/crazywhalecc/static-php-cli) and [phpmicro](https://github.com/dixyes/phpmicro) together to build static PHP CLI/Micro executables.
 
-### Prerequisites
-
-Set up your build environment by following the [static-php-cli manual build guide](https://static-php.dev/en/guide/manual-build.html#build-locally-using-source-code).
-
-#### 1. Setup static-php-cli
-
-```bash
-git clone https://github.com/crazywhalecc/static-php-cli
-cd static-php-cli
-composer install
-```
-
-#### 2. Configure Extension
-
-Add the webview extension configuration to `config/ext.json`:
-
-```jsonc
-{
-    // ... other extensions
-    "webview": {
-        "type": "external",
-        "source": "webview",
-        "frameworks": ["WebKit"],
-        "cpp-extension": true
-    }
-    // ... other extensions
-}
-```
-
-Add the webview source to `config/source.json`:
-
-```jsonc
-{
-    // ... other sources
-    "webview": {
-        "type": "git",
-        "path": "php-src/ext/webview",
-        "rev": "main",
-        "url": "https://github.com/happystraw/php-ext-webview",
-        "license": {
-            "type": "file",
-            "path": "LICENSE"
-        }
-    }
-    // ... other sources
-}
-```
-
-#### 3. Generate Build Commands
-
-Use the [CLI Build Command Generator](https://static-php.dev/en/guide/cli-generator.html) to create your build commands.
-
-> **Important**: Include `webview` in the extensions list during the `download/build` stages.
-
-### Windows
-
-**Example:**
-
-```powershell
-php .\bin\spc download --with-php=8.4 --for-extensions "swow,webview" --prefer-pre-built --debug
-php .\bin\spc doctor --auto-fix --debug
-php .\bin\spc build --build-cli --build-micro "swow,webview" --debug --with-upx-pack
-```
-
-#### Additional Options
-
-- **Hide Console Window**: Add `--enable-micro-win32` to create windowed applications, hiding the console window.
-- **Custom Icon**: Use `--with-micro-logo=/path/to/icon.ico` to set application icon.
-
-> **More Options**: See the [static-php-cli documentation](https://static-php.dev) for additional build configurations.
-
-### macOS
-
-**Example:**
-
-```bash
-./bin/spc download --with-php=8.4 --for-extensions "swow,webview" --prefer-pre-built --debug
-./bin/spc doctor --auto-fix --debug
-./bin/spc build \
-    --build-cli \
-    --build-micro \
-    "swow,webview" \
-    --debug
-```
-
-#### Additional Options
-
-- **Create App Bundle**: Add `.app` suffix to create a macOS application, hiding the console window:
-
-  ```bash
-  cat micro.sfx ui.php > ui.app
-  chmod +x ui.app
-  ```
-
-- **Custom Icon**: Use [FileIcon](https://github.com/mklement0/fileicon) or similar tools to set application icons
-
-### Linux
-
-Linux requires GTK/WebKitGTK libraries for webview functionality. Additional configuration is needed for successful linking.
-
-To successfully link to these libraries on the system, some additional operations are required.
-
-1. Set the environment variable `PKG_CONFIG_PATH` to the directory of `.pc` files on the current system. For Ubuntu as an example:
-     - /usr/lib/x86_64-linux-gnu/pkgconfig
-     - /usr/share/pkgconfig
-2. Set the environment variable `SPC_EXTRA_LIBS="$(pkg-config --libs gtk4 webkitgtk-6.0)"` to link `gtk4` and `webkitgtk-6.0` libraries.
-
-#### Prerequisites
-
-Follow the [webview/webview](https://github.com/webview/webview) documentation to install the required dependencies.
-
-#### Build Configuration
-
-**Example:**
-
-Set up environment variables for library linking:
-
-```bash
-./bin/spc download --with-php=8.4 --for-extensions "swow,webview" --prefer-pre-built --debug
-./bin/spc doctor --auto-fix --debug
-
-# use zig to compile php
-./bin/spc install-pkg zig
-
-# build with GTK/WebKit linking
-SPC_EXTRA_LIBS="$(pkg-config --libs gtk4 webkitgtk-6.0)" \
-PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig" \
-SPC_TARGET="native-native" \
-./bin/spc build \
-    --build-cli \
-    --build-micro \
-    "swow,webview" \
-    --debug \
-    --with-upx-pack
-```
+For specific operations, you can refer to the [build-unix.yml](.github/workflows/build-unix.yml) and [build-windows.yml](.github/workflows/build-windows.yml) files in the GitHub Actions workflows.

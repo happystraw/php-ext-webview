@@ -6,6 +6,10 @@
 
 与 [static-php-cli](https://github.com/crazywhalecc/static-php-cli) 和 [phpmicro](https://github.com/dixyes/phpmicro) 结合使用时，非常适合构建单文件 GUI 应用程序。
 
+| Windows | macOS | Linux |
+|---------|-------|-------|
+| ![Windows 平台截图](./assets/windows.png) | ![macOS 平台截图](./assets/macos.png) | ![Linux 平台截图](./assets/linux.png) |
+
 ## 功能特性
 
 - **支持 PHP 版本**：8.3, 8.4, 8.5
@@ -20,6 +24,58 @@
 - **PHP 集成**：原生扩展，具有适当的错误处理和类型安全
 
 > **API 参考**：查看 [webview.stub.php](./webview.stub.php) 获取完整的方法文档。
+
+## 快速开始
+
+为了快速体验 webview 扩展，可以从 [Releases](https://github.com/happystraw/php-ext-webview/releases) 页面下载预构建的 PHP 可执行文件。
+
+> 本构建只包含少量扩展，如需更多功能请参考下方源码构建和 GitHub Actions 构建。
+
+### Linux/macOS
+
+**CLI：**
+
+```bash
+# 1. 下载对应架构的 php-cli-8.4-*.zip
+# 2. 解压并设置执行权限
+# 3. 运行示例
+chmod +x ./php
+./php examples/basic.php
+```
+
+**Micro：**：
+
+```bash
+# 1. 下载对应架构的 php-micro-8.4-*.zip
+# 2. 解压并设置执行权限
+# 3. 合并成单文件程序并运行
+cat micro.sfx examples/basic.php > basic
+chmod +x basic
+./basic
+```
+
+### Windows
+
+> **注意**：Windows 版本使用 UPX 压缩，可能触发杀毒软件警报，请添加信任或自行构建。
+
+**CLI：**
+
+```cmd
+REM 1. 下载对应架构的 php-cli-8.4-windows-*.zip
+REM 2. 解压到任意目录
+REM 3. 运行示例
+.\php.exe examples\basic.php
+```
+
+**Micro：**
+
+```cmd
+REM 1. 下载对应架构的 php-micro-8.4-windows-*.zip
+REM 2. 解压到任意目录
+REM 3. 合并成单文件程序并运行
+COPY /b micro.sfx examples\basic.php basic.exe
+.\basic.exe
+```
 
 ## 从源码构建
 
@@ -46,7 +102,7 @@ make install
 
 按照 [PHP Extensions](https://github.com/php/php-windows-builder?tab=readme-ov-file#php-extensions) 指南在 Windows 上构建 PHP 扩展。
 
-## 使用 GitHub Actions 自动构建
+## 使用 GitHub Actions 构建
 
 为了更便捷的构建和分发，你可以 fork 本仓库并使用本仓库中预配置的 GitHub Actions 工作流来自动构建包含 webview 扩展的 PHP CLI/Micro 可执行文件。
 
@@ -55,142 +111,8 @@ make install
 - **Build for Unix**：为 Linux（x86_64, aarch64）和 macOS（x86_64, aarch64）构建静态 PHP CLI/Micro 可执行文件
 - **Build for Windows**：为 Windows (x86_64) 构建静态 PHP CLI/Micro 可执行文件
 
-## 单文件应用程序
+## 静态 PHP CLI/Micro 构建
 
-通过将此扩展与 [static-php-cli](https://github.com/crazywhalecc/static-php-cli) 和 [phpmicro](https://github.com/dixyes/phpmicro) 结合使用，创建独立的可执行应用程序。这种方法将 PHP、webview 扩展和您的应用程序代码打包到一个可执行文件中。
+你可以使用 [static-php-cli](https://github.com/crazywhalecc/static-php-cli) 和 [phpmicro](https://github.com/dixyes/phpmicro) 结合使用来构建静态 PHP CLI/Micro 可执行文件。
 
-### 前置要求
-
-按照 [static-php-cli 手动构建指南](https://static-php.dev/zh/guide/manual-build.html#%E6%89%8B%E5%8A%A8%E6%9E%84%E5%BB%BA-%E4%BD%BF%E7%94%A8%E6%BA%90%E7%A0%81) 设置您的构建环境。
-
-#### 1. 设置 static-php-cli
-
-```bash
-git clone https://github.com/crazywhalecc/static-php-cli
-cd static-php-cli
-composer install
-```
-
-#### 2. 配置扩展
-
-将 webview 扩展配置添加到 `config/ext.json`：
-
-```jsonc
-{
-    // ... 其他扩展
-    "webview": {
-        "type": "external",
-        "source": "webview",
-        "frameworks": ["WebKit"],
-        "cpp-extension": true
-    }
-    // ... 其他扩展
-}
-```
-
-将 webview 源添加到 `config/source.json`：
-
-```jsonc
-{
-    // ... 其他源
-    "webview": {
-        "type": "git",
-        "path": "php-src/ext/webview",
-        "rev": "main",
-        "url": "https://github.com/happystraw/php-ext-webview",
-        "license": {
-            "type": "file",
-            "path": "LICENSE"
-        }
-    }
-    // ... 其他源
-}
-```
-
-#### 3. 生成构建命令
-
-使用 [CLI 构建命令生成器](https://static-php.dev/zh/guide/cli-generator.html) 创建您的构建命令。
-
-> **重要**：在 `download/build` 阶段，确保在扩展列表中包含 `webview`。
-
-### Windows
-
-**示例：**
-
-```powershell
-php .\bin\spc download --with-php=8.4 --for-extensions "swow,webview" --prefer-pre-built --debug
-php .\bin\spc doctor --auto-fix --debug
-php .\bin\spc build --build-cli --build-micro "swow,webview" --debug --with-upx-pack
-```
-
-#### 附加选项
-
-- **隐藏控制台窗口**：添加 `--enable-micro-win32` 创建窗口化应用程序，隐藏控制台窗口。
-- **自定义图标**：使用 `--with-micro-logo=/path/to/icon.ico` 设置应用程序图标。
-
-> **更多选项**：查看 [static-php-cli 文档](https://static-php.dev) 获取其他构建配置。
-
-### macOS
-
-**示例：**
-
-```bash
-./bin/spc download --with-php=8.4 --for-extensions "swow,webview" --prefer-pre-built --debug
-./bin/spc doctor --auto-fix --debug
-./bin/spc build \
-    --build-cli \
-    --build-micro \
-    "swow,webview" \
-    --debug
-```
-
-#### 附加选项
-
-- **创建 App Bundle**：添加 `.app` 后缀创建 macOS 应用程序，隐藏控制台窗口：
-
-  ```bash
-  cat micro.sfx webview.php > webview.app
-  chmod +x webview.app
-  ```
-
-- **自定义图标**：使用 [FileIcon](https://github.com/mklement0/fileicon) 或类似工具设置应用程序图标
-
-### Linux
-
-Linux 需要 GTK/WebKitGTK 库来实现 webview 功能。需要额外配置才能成功链接。
-
-要在系统上成功链接这些库，需要执行一些额外操作。
-
-1. 将环境变量 `PKG_CONFIG_PATH` 设置为当前系统上 `.pc` 文件的目录。以 Ubuntu 为例：
-     - /usr/lib/x86_64-linux-gnu/pkgconfig
-     - /usr/share/pkgconfig
-2. 设置环境变量 `SPC_EXTRA_LIBS="$(pkg-config --libs gtk4 webkitgtk-6.0)"` 以链接 `gtk4` 和 `webkitgtk-6.0` 库。
-
-#### 前置要求
-
-按照 [webview/webview](https://github.com/webview/webview) 文档安装所需的依赖项。
-
-#### 构建配置
-
-**示例：**
-
-设置库链接的环境变量：
-
-```bash
-./bin/spc download --with-php=8.4 --for-extensions "swow,webview" --prefer-pre-built --debug
-./bin/spc doctor --auto-fix --debug
-
-# 使用 zig 编译 php
-./bin/spc install-pkg zig
-
-# 使用 GTK/WebKit 链接构建
-SPC_EXTRA_LIBS="$(pkg-config --libs gtk4 webkitgtk-6.0)" \
-PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig" \
-SPC_TARGET="native-native" \
-./bin/spc build \
-    --build-cli \
-    --build-micro \
-    "swow,webview" \
-    --debug \
-    --with-upx-pack
-```
+具体操作可以参考 GitHub Actions 工作流中的 [build-unix.yml](.github/workflows/build-unix.yml) 和 [build-windows.yml](.github/workflows/build-windows.yml) 文件。

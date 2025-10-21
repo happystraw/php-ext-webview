@@ -8,7 +8,7 @@
 
 | Windows | macOS | Linux |
 |---------|-------|-------|
-| ![Windows 平台截图](./assets/windows.png) | ![macOS 平台截图](./assets/macos.png) | ![Linux 平台截图](./assets/linux.png) |
+| ![Windows](./assets/windows.png) | ![macOS](./assets/macos.png) | ![Linux](./assets/linux.png) |
 
 ## 功能特性
 
@@ -73,7 +73,7 @@ REM 3. 运行示例
 REM 1. 下载对应架构的 php-micro-8.4-windows-*.zip
 REM 2. 解压到任意目录
 REM 3. 合并成单文件程序并运行
-COPY /b micro.sfx examples\basic.php basic.exe
+COPY /b micro.sfx + examples\basic.php basic.exe
 .\basic.exe
 ```
 

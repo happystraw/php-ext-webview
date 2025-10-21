@@ -6,6 +6,10 @@ A native PHP extension that provides lightweight, cross-platform embedded browse
 
 Perfect for building single-file GUI applications when combined with [static-php-cli](https://github.com/crazywhalecc/static-php-cli) and [phpmicro](https://github.com/dixyes/phpmicro).
 
+| Windows | macOS | Linux |
+|---------|-------|-------|
+| ![Windows](./assets/windows.png) | ![macOS](./assets/macos.png) | ![Linux](./assets/linux.png) |
+
 ## Features
 
 - **Support for PHP**: 8.3, 8.4, 8.5
@@ -69,7 +73,7 @@ REM 3. Run examples
 REM 1. Download the corresponding architecture php-micro-8.4-windows-*.zip
 REM 2. Extract to any directory
 REM 3. Merge into single file program and run
-COPY /b micro.sfx examples\basic.php basic.exe
+COPY /b micro.sfx + examples\basic.php basic.exe
 .\basic.exe
 ```
 

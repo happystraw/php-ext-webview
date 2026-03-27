@@ -5,6 +5,31 @@
 #ifdef _WIN32
 
 #include <windows.h> /* _WIN32 */
+#include <stdlib.h>
+
+typedef struct webview_win32_fullscreen_state {
+    WINDOWPLACEMENT placement;
+    DWORD style;
+    DWORD ex_style;
+} webview_win32_fullscreen_state_t;
+
+static const char *WEBVIEW_WIN32_FULLSCREEN_STATE_PROP = "webview_fullscreen_state";
+
+static webview_win32_fullscreen_state_t *webview_win32_get_fullscreen_state(HWND hwnd)
+{
+    return (webview_win32_fullscreen_state_t *)GetPropA(
+        hwnd, WEBVIEW_WIN32_FULLSCREEN_STATE_PROP);
+}
+
+static void webview_win32_clear_fullscreen_state(HWND hwnd)
+{
+    webview_win32_fullscreen_state_t *state =
+        (webview_win32_fullscreen_state_t *)RemovePropA(
+            hwnd, WEBVIEW_WIN32_FULLSCREEN_STATE_PROP);
+    if (state) {
+        free(state);
+    }
+}
 
 #elif defined(__APPLE__)
 
@@ -233,6 +258,27 @@ WEBVIEW_API webview_error_t webview_window_fullscreen(webview_t w)
     DWORD ex_style = GetWindowLong(hwnd, GWL_EXSTYLE);
 
     if (style & WS_OVERLAPPEDWINDOW) {
+        webview_win32_fullscreen_state_t *state =
+            webview_win32_get_fullscreen_state(hwnd);
+        if (!state) {
+            state = (webview_win32_fullscreen_state_t *)malloc(sizeof(*state));
+            if (!state) return WEBVIEW_ERROR_UNSPECIFIED;
+
+            state->placement.length = sizeof(state->placement);
+            if (!GetWindowPlacement(hwnd, &state->placement)) {
+                free(state);
+                return WEBVIEW_ERROR_INVALID_STATE;
+            }
+
+            state->style = style;
+            state->ex_style = ex_style;
+
+            if (!SetPropA(hwnd, WEBVIEW_WIN32_FULLSCREEN_STATE_PROP, (HANDLE)state)) {
+                free(state);
+                return WEBVIEW_ERROR_UNSPECIFIED;
+            }
+        }
+
         // Enter fullscreen
         SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
         SetWindowLong(hwnd, GWL_EXSTYLE, ex_style & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
@@ -290,10 +336,24 @@ WEBVIEW_API webview_error_t webview_window_unfullscreen(webview_t w)
 
     DWORD style = GetWindowLong(hwnd, GWL_STYLE);
     if (!(style & WS_OVERLAPPEDWINDOW)) {
-        SetWindowLong(hwnd, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
-        SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
-                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-        ShowWindow(hwnd, SW_RESTORE);
+        webview_win32_fullscreen_state_t *state =
+            webview_win32_get_fullscreen_state(hwnd);
+
+        if (state) {
+            SetWindowLong(hwnd, GWL_STYLE, state->style);
+            SetWindowLong(hwnd, GWL_EXSTYLE, state->ex_style);
+            SetWindowPlacement(hwnd, &state->placement);
+            SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+                        SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                            SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+            webview_win32_clear_fullscreen_state(hwnd);
+        } else {
+            SetWindowLong(hwnd, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
+            SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+                        SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                            SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+            ShowWindow(hwnd, SW_RESTORE);
+        }
     }
     return WEBVIEW_ERROR_OK;
 

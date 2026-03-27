@@ -264,7 +264,12 @@ jobs:
 
       - name: "Run doctor"
         working-directory: static-php-cli
-        run: ${{ needs.define-build.outputs.fix }}
+        run: |
+          ${{ needs.define-build.outputs.fix }}
+          if [[ "${{ inputs.os }}" == linux* ]]; then
+            # Build zlib for php 8.5+ (avoid libz.a not found error when building with webview and zlib extensions together)
+            ./bin/spc build:libs zlib -r
+          fi
 
       - name: "Build PHP"
         working-directory: static-php-cli

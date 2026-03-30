@@ -16,7 +16,7 @@ on:
       php-version:
         required: true
         description: PHP version to compile
-        default: "8.4"
+        default: "8.5"
         type: choice
         options:
           - "8.5"
@@ -230,7 +230,7 @@ jobs:
         run: |
           # Install GTK and WebKitGTK development packages
           sudo apt-get update
-          sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
 
           # Copy pkg-config files to "ext_webview_deps_pc_dir" directory
           EXT_WEBVIEW_DEPS_PC_DIR="$(pwd)/ext_webview_deps_pc_dir"
@@ -241,11 +241,11 @@ jobs:
 
           # Only export webview-specific variables if webview extension is included
           if [[ "${{ inputs.extensions }}" == *"webview"* ]]; then
-            echo "SPC_EXTRA_LIBS=$(pkg-config --libs gtk4 webkitgtk-6.0)" >> $GITHUB_ENV
+            echo "SPC_EXTRA_LIBS=$(pkg-config --libs gtk+-3.0 webkit2gtk-4.1)" >> $GITHUB_ENV
             echo "PKG_CONFIG_PATH=${EXT_WEBVIEW_DEPS_PC_DIR}" >> $GITHUB_ENV
             echo "🔧 Linux build environment variables exported (with webview support):"
             echo "  SPC_TARGET=native-native"
-            echo "  SPC_EXTRA_LIBS=$(pkg-config --libs gtk4 webkitgtk-6.0)"
+            echo "  SPC_EXTRA_LIBS=$(pkg-config --libs gtk+-3.0 webkit2gtk-4.1)"
             echo "  PKG_CONFIG_PATH=${EXT_WEBVIEW_DEPS_PC_DIR}"
           else
             echo "🔧 Linux build environment variables exported (without webview):"

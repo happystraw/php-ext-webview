@@ -108,11 +108,12 @@ For easier building and distribution, you can fork this repository and use the p
 
 ### Available Workflows
 
-- **Build for Unix**: Builds static PHP CLI/Micro executables for Linux (x86_64, aarch64) and macOS (x86_64, aarch64)
+- **Build for macOS**: Builds static PHP CLI/Micro executables for macOS (x86_64, aarch64)
+- **Build for Linux**: Builds static PHP CLI/Micro executables for Linux (x86_64, aarch64)
 - **Build for Windows**: Builds static PHP CLI/Micro executables for Windows (x86_64)
 
 ## Static PHP CLI/Micro Build
 
 You can use [static-php-cli](https://github.com/crazywhalecc/static-php-cli) and [phpmicro](https://github.com/dixyes/phpmicro) together to build static PHP CLI/Micro executables.
 
-For specific operations, you can refer to the [build-unix.yml](.github/workflows/build-unix.yml) and [build-windows.yml](.github/workflows/build-windows.yml) files in the GitHub Actions workflows.
+For specific operations, you can refer to the [build-macos.yml](.github/workflows/build-macos.yml), [build-linux.yml](.github/workflows/build-linux.yml) and [build-windows.yml](.github/workflows/build-windows.yml) files in the GitHub Actions workflows.

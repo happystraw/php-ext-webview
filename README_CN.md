@@ -108,11 +108,12 @@ make install
 
 ### 可用的工作流
 
-- **Build for Unix**：为 Linux（x86_64, aarch64）和 macOS（x86_64, aarch64）构建静态 PHP CLI/Micro 可执行文件
+- **Build for macOS**：为 macOS（x86_64, aarch64）构建静态 PHP CLI/Micro 可执行文件
+- **Build for Linux**：为 Linux（x86_64, aarch64）构建静态 PHP CLI/Micro 可执行文件
 - **Build for Windows**：为 Windows (x86_64) 构建静态 PHP CLI/Micro 可执行文件
 
 ## 静态 PHP CLI/Micro 构建
 
 你可以使用 [static-php-cli](https://github.com/crazywhalecc/static-php-cli) 和 [phpmicro](https://github.com/dixyes/phpmicro) 结合使用来构建静态 PHP CLI/Micro 可执行文件。
 
-具体操作可以参考 GitHub Actions 工作流中的 [build-unix.yml](.github/workflows/build-unix.yml) 和 [build-windows.yml](.github/workflows/build-windows.yml) 文件。
+具体操作可以参考 GitHub Actions 工作流中的 [build-macos.yml](.github/workflows/build-macos.yml)、[build-linux.yml](.github/workflows/build-linux.yml) 和 [build-windows.yml](.github/workflows/build-windows.yml) 文件。

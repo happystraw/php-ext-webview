@@ -1,65 +1,121 @@
-name: Build for Windows
+name: "Build for macOS"
 
 on:
   workflow_dispatch:
     inputs:
+      os:
+        required: true
+        description: Build target OS
+        default: "macos-aarch64"
+        type: choice
+        options:
+          - "macos-x86_64"
+          - "macos-aarch64"
       php-version:
         required: true
         description: PHP version to compile
-        default: "8.4"
+        default: "8.5"
         type: choice
         options:
           - "8.5"
           - "8.4"
           - "8.3"
-      build-cli:
-        description: Build php cli binary
-        default: true
-        type: boolean
-      build-micro:
-        description: Build php micro binary
-        default: true
-        type: boolean
-      enable-micro-win32:
-        description: Enable php micro win32
-        default: true
-        type: boolean
-      enable-zts:
-        description: Enable ZTS
-        type: boolean
-        default: false
       extensions:
-        description: Extensions to compile (comma separated)
+        description: Extensions to build (comma separated)
         required: true
         type: string
         default: "webview"
       extra-libs:
         description: Extra libraries to build (optional, comma separated)
         type: string
-      # prefer-pre-built:
-      #   description: Prefer pre-built binaries (reduce build time)
-      #   type: boolean
-      #   default: true
+      build-cli:
+        description: Build for php cli binary
+        default: true
+        type: boolean
+      build-micro:
+        description: Build for php micro binary
+        default: true
+        type: boolean
+      enable-zts:
+        description: Enable ZTS
+        type: boolean
+        default: false
       debug:
         description: Display full build logs
-        type: boolean
-        default: true
-      with-upx-pack:
-        description: Pack with UPX
         type: boolean
         default: true
       no-strip:
         description: Keep debug symbols for debugging
         type: boolean
         default: false
-
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
+  define-build:
+    name: "Define Build Scripts for ${{ inputs.os }}"
+    runs-on: ubuntu-22.04
+    outputs:
+      runs_on: ${{ steps.gendef.outputs.runs_on }}
+      fix: ${{ steps.gendef.outputs.fix }}
+      download: ${{ steps.gendef.outputs.download }}
+      build: ${{ steps.gendef.outputs.build }}
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Define"
+        id: gendef
+        run: |
+          FIX_CMD="./bin/spc doctor --auto-fix"
+          DOWN_CMD="./bin/spc download"
+          BUILD_CMD="./bin/spc build"
+          case "${{ inputs.os }}" in
+            macos-x86_64)
+              RUNS_ON="macos-14-large"
+              ;;
+            macos-aarch64)
+              RUNS_ON="macos-14"
+              ;;
+          esac
+
+          DOWN_CMD="$DOWN_CMD --with-php=${{ inputs.php-version }} --for-extensions=${{ inputs.extensions }} --ignore-cache-sources=php-src"
+          BUILD_CMD="$BUILD_CMD ${{ inputs.extensions }}"
+
+          if [ -n "${{ inputs.extra-libs }}" ]; then
+            DOWN_CMD="$DOWN_CMD --for-libs=${{ inputs.extra-libs }}"
+            BUILD_CMD="$BUILD_CMD --with-libs=${{ inputs.extra-libs }}"
+          fi
+
+          if [ ${{ inputs.debug }} == true ]; then
+            DOWN_CMD="$DOWN_CMD --debug"
+            BUILD_CMD="$BUILD_CMD --debug"
+            FIX_CMD="$FIX_CMD --debug"
+          fi
+
+          DOWN_CMD="$DOWN_CMD --prefer-pre-built"
+
+          if [ ${{ inputs.build-cli }} == true ]; then
+              BUILD_CMD="$BUILD_CMD --build-cli"
+          fi
+
+          if [ ${{ inputs.build-micro }} == true ]; then
+              BUILD_CMD="$BUILD_CMD --build-micro"
+          fi
+
+          if [ ${{ inputs.enable-zts }} == true ]; then
+              BUILD_CMD="$BUILD_CMD --enable-zts"
+          fi
+
+          echo 'download='"$DOWN_CMD" >> "$GITHUB_OUTPUT"
+          echo 'build='"$BUILD_CMD" >> "$GITHUB_OUTPUT"
+          echo 'runs_on='"$RUNS_ON" >> "$GITHUB_OUTPUT"
+          echo 'fix='"$FIX_CMD" >> "$GITHUB_OUTPUT"
   build:
-    name: Build PHP ${{ inputs.php-version }} for Windows x86_64
-    runs-on: windows-latest
+    name: "Build PHP ${{ inputs.php-version }} for ${{ inputs.os }}"
+    runs-on: ${{ needs.define-build.outputs.runs_on }}
+    needs: define-build
+    timeout-minutes: 240
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
@@ -79,10 +135,8 @@ jobs:
           composer update --no-dev
 
       - name: "Configure webview extension"
-        shell: bash
+        working-directory: static-php-cli
         run: |
-          cd static-php-cli
-
           # Add webview extension configuration to config/ext.json
           if [ ! -f config/ext.json ]; then
             echo '{}' > config/ext.json
@@ -128,7 +182,6 @@ jobs:
           cat config/source.json | jq '.webview'
 
       - name: "Generate cache key"
-        shell: bash
         run: echo "EXTENSIONS_KEY=$(echo '${{ inputs.extensions }}' | tr ',' '-')" >> "$GITHUB_ENV"
 
       # Cache downloaded source
@@ -137,77 +190,46 @@ jobs:
         uses: actions/cache@v4
         with:
           path: static-php-cli/downloads
-          key: php-dependencies-windows-${{ inputs.php-version }}-${{ env.EXTENSIONS_KEY }}
-
-      - if: ${{ inputs.build-cli == true }}
-        name: "Build for cli binary"
-        run: echo "SPC_BUILD_CLI=--build-cli" >> $env:GITHUB_ENV
-
-      - if: ${{ inputs.build-micro == true }}
-        name: "Build for micro binary"
-        run: echo "SPC_BUILD_MICRO=--build-micro" >> $env:GITHUB_ENV
-
-      - if: inputs.debug == true
-        name: "[Optional] Display full build logs"
-        run: echo "SPC_DEBUG=--debug" >> $env:GITHUB_ENV
-
-      # - if: inputs.prefer-pre-built == true
-      - name: "[Optional] Prefer pre-built binaries"
-        run: echo "SPC_PRE_BUILT=--prefer-pre-built" >> $env:GITHUB_ENV
-
-      - if: inputs.with-upx-pack == true
-        name: "[Optional] Pack with UPX"
-        run: echo "SPC_UPX_PACK=--with-upx-pack" >> $env:GITHUB_ENV
-
-      - if: inputs.enable-micro-win32 == true
-        name: "[Optional] Enable micro win32"
-        run: echo "SPC_ENABLE_MICRO_WIN32=--enable-micro-win32" >> $env:GITHUB_ENV
-
-      - if: inputs.enable-zts == true
-        name: "[Optional] Enable zts"
-        run: echo "SPC_ENABLE_ZTS=--enable-zts" >> $env:GITHUB_ENV
-
-      - name: "Run doctor"
-        shell: bash
-        run: |
-          cd static-php-cli
-          ./bin/spc doctor --auto-fix
+          key: php-dependencies-${{ inputs.os }}-${{ inputs.php-version }}-${{ env.EXTENSIONS_KEY }}
 
       - name: "Download sources"
         working-directory: static-php-cli
-        run: |
-          ./bin/spc download --with-php="${{ inputs.php-version }}" --for-extensions="${{ inputs.extensions }}" ${{ env.SPC_DEBUG }} ${{ env.SPC_PRE_BUILT }}
-          ./bin/spc install-pkg upx
+        run: ${{ needs.define-build.outputs.download }}
+
+      - name: "Run doctor"
+        working-directory: static-php-cli
+        run: ${{ needs.define-build.outputs.fix }}
 
       - name: "Build PHP"
         working-directory: static-php-cli
-        run: |
-          ./bin/spc build "${{ inputs.extensions }}" ${{ env.SPC_BUILD_CLI }} ${{ env.SPC_BUILD_MICRO }} ${{ env.SPC_DEBUG }} ${{ env.SPC_UPX_PACK }} ${{ env.SPC_ENABLE_MICRO_WIN32 }} ${{ env.SPC_ENABLE_ZTS }}
+        run: ${{ needs.define-build.outputs.build }}
 
+      # Upload cli executable
       - if: ${{ inputs.build-cli == true }}
-        name: "Upload PHP cli executable"
+        name: "Upload PHP cli SAPI"
         uses: actions/upload-artifact@v4
         with:
-          name: php-cli-${{ inputs.php-version }}-windows
-          path: static-php-cli/buildroot/bin/php.exe
+          name: php-cli-${{ inputs.php-version }}-${{ inputs.os }}
+          path: static-php-cli/buildroot/bin/php
 
+      # Upload micro self-extracted executable
       - if: ${{ inputs.build-micro == true }}
-        name: "Upload PHP micro executable"
+        name: "Upload PHP micro SAPI"
         uses: actions/upload-artifact@v4
         with:
-          name: php-micro-${{ inputs.php-version }}-windows
+          name: php-micro-${{ inputs.php-version }}-${{ inputs.os }}
           path: static-php-cli/buildroot/bin/micro.sfx
 
+      # Upload extensions metadata
       - uses: actions/upload-artifact@v4
         name: "Upload License files"
         with:
-          name: license-files-${{ inputs.php-version }}-windows
+          name: license-files-${{ inputs.php-version }}-${{ inputs.os }}
           path: static-php-cli/buildroot/license/
-
       - uses: actions/upload-artifact@v4
         name: "Upload Build metadata"
         with:
-          name: build-meta-${{ inputs.php-version }}-windows
+          name: build-meta-${{ inputs.php-version }}-${{ inputs.os }}
           path: |
             static-php-cli/buildroot/build-extensions.json
             static-php-cli/buildroot/build-libraries.json

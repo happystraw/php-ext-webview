@@ -1,4 +1,4 @@
-name: "Build for Unix"
+name: "Build for Linux"
 
 on:
   workflow_dispatch:
@@ -9,8 +9,6 @@ on:
         default: "linux-x86_64"
         type: choice
         options:
-          - "macos-x86_64"
-          - "macos-aarch64"
           - "linux-x86_64"
           - "linux-aarch64"
       php-version:
@@ -42,10 +40,6 @@ on:
         description: Enable ZTS
         type: boolean
         default: false
-      # prefer-pre-built:
-      #   description: Prefer pre-built binaries (reduce build time)
-      #   type: boolean
-      #   default: true
       debug:
         description: Display full build logs
         type: boolean
@@ -55,7 +49,7 @@ on:
         type: boolean
         default: false
       with-upx-pack:
-        description: Pack with UPX (Linux only)
+        description: Pack with UPX
         type: boolean
         default: true
 env:
@@ -81,12 +75,6 @@ jobs:
           DOWN_CMD="./bin/spc download"
           BUILD_CMD="./bin/spc build"
           case "${{ inputs.os }}" in
-            macos-x86_64)
-              RUNS_ON="macos-14-large"
-              ;;
-            macos-aarch64)
-              RUNS_ON="macos-14"
-              ;;
             linux-x86_64)
               RUNS_ON="ubuntu-22.04"
               ;;
@@ -109,9 +97,7 @@ jobs:
             FIX_CMD="$FIX_CMD --debug"
           fi
 
-          # if [ ${{ inputs.prefer-pre-built }} == true ]; then
           DOWN_CMD="$DOWN_CMD --prefer-pre-built"
-          # fi
 
           if [ ${{ inputs.build-cli }} == true ]; then
               BUILD_CMD="$BUILD_CMD --build-cli"
@@ -125,7 +111,7 @@ jobs:
               BUILD_CMD="$BUILD_CMD --enable-zts"
           fi
 
-          if [[ ${{ inputs.os }} == linux* ]] && [ ${{ inputs.with-upx-pack }} == true ]; then
+          if [ ${{ inputs.with-upx-pack }} == true ]; then
               BUILD_CMD="$BUILD_CMD --with-upx-pack"
           fi
 
@@ -204,17 +190,7 @@ jobs:
           cat config/source.json | jq '.webview'
 
       - name: "Generate cache key"
-        shell: bash
-        run: |
-          # Use platform-appropriate hash command
-          if command -v sha256sum >/dev/null 2>&1; then
-            # Linux
-            INPUT_HASH=$(echo "${{ inputs.os }}-${{ inputs.php-version }}-${{ inputs.extensions }}-webview-${{ github.sha }}" | sha256sum | awk '{print $1}')
-          else
-            # macOS
-            INPUT_HASH=$(echo "${{ inputs.os }}-${{ inputs.php-version }}-${{ inputs.extensions }}-webview-${{ github.sha }}" | shasum -a 256 | awk '{print $1}')
-          fi
-          echo "INPUT_HASH=${INPUT_HASH}" >> "$GITHUB_ENV"
+        run: echo "EXTENSIONS_KEY=$(echo '${{ inputs.extensions }}' | tr ',' '-')" >> "$GITHUB_ENV"
 
       # Cache downloaded source
       - id: cache-download
@@ -222,10 +198,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: static-php-cli/downloads
-          key: php-dependencies-${{ inputs.os }}-${{ inputs.php-version }}-${{ env.INPUT_HASH }}
+          key: php-dependencies-${{ inputs.os }}-${{ inputs.php-version }}-${{ env.EXTENSIONS_KEY }}
 
       - name: "Setup Linux"
-        if: startsWith(inputs.os, 'linux')
         working-directory: static-php-cli
         run: |
           # Install GTK and WebKitGTK development packages
@@ -266,10 +241,9 @@ jobs:
         working-directory: static-php-cli
         run: |
           ${{ needs.define-build.outputs.fix }}
-          if [[ "${{ inputs.os }}" == linux* ]]; then
-            # Build zlib for php 8.5+ (avoid libz.a not found error when building with webview and zlib extensions together)
-            ./bin/spc build:libs zlib -r
-          fi
+          # Build zlib for php 8.5+ (avoid libz.a not found error when building with webview and zlib extensions together)
+          ./bin/spc download zlib --for-libs=zlib
+          ./bin/spc build:libs zlib -r
 
       - name: "Build PHP"
         working-directory: static-php-cli

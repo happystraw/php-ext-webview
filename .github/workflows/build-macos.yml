@@ -72,10 +72,10 @@ jobs:
           BUILD_CMD="./bin/spc build"
           case "${{ inputs.os }}" in
             macos-x86_64)
-              RUNS_ON="macos-14-large"
+              RUNS_ON="macos-15-intel"
               ;;
             macos-aarch64)
-              RUNS_ON="macos-14"
+              RUNS_ON="macos-15"
               ;;
           esac
 

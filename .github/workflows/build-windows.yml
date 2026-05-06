@@ -6,7 +6,7 @@ on:
       php-version:
         required: true
         description: PHP version to compile
-        default: "8.4"
+        default: "8.5"
         type: choice
         options:
           - "8.5"
@@ -59,7 +59,7 @@ env:
 jobs:
   build:
     name: Build PHP ${{ inputs.php-version }} for Windows x86_64
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4

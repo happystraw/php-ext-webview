@@ -48,73 +48,14 @@ on:
         description: Keep debug symbols for debugging
         type: boolean
         default: false
+
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  define-build:
-    name: "Define Build Scripts for ${{ inputs.os }}"
-    runs-on: ubuntu-22.04
-    outputs:
-      runs_on: ${{ steps.gendef.outputs.runs_on }}
-      fix: ${{ steps.gendef.outputs.fix }}
-      download: ${{ steps.gendef.outputs.download }}
-      build: ${{ steps.gendef.outputs.build }}
-    steps:
-      - name: "Checkout"
-        uses: actions/checkout@v4
-
-      - name: "Define"
-        id: gendef
-        run: |
-          FIX_CMD="./bin/spc doctor --auto-fix"
-          DOWN_CMD="./bin/spc download"
-          BUILD_CMD="./bin/spc build"
-          case "${{ inputs.os }}" in
-            macos-x86_64)
-              RUNS_ON="macos-15-intel"
-              ;;
-            macos-aarch64)
-              RUNS_ON="macos-15"
-              ;;
-          esac
-
-          DOWN_CMD="$DOWN_CMD --with-php=${{ inputs.php-version }} --for-extensions=${{ inputs.extensions }} --ignore-cache-sources=php-src"
-          BUILD_CMD="$BUILD_CMD ${{ inputs.extensions }}"
-
-          if [ -n "${{ inputs.extra-libs }}" ]; then
-            DOWN_CMD="$DOWN_CMD --for-libs=${{ inputs.extra-libs }}"
-            BUILD_CMD="$BUILD_CMD --with-libs=${{ inputs.extra-libs }}"
-          fi
-
-          if [ ${{ inputs.debug }} == true ]; then
-            DOWN_CMD="$DOWN_CMD --debug"
-            BUILD_CMD="$BUILD_CMD --debug"
-            FIX_CMD="$FIX_CMD --debug"
-          fi
-
-          DOWN_CMD="$DOWN_CMD --prefer-pre-built"
-
-          if [ ${{ inputs.build-cli }} == true ]; then
-              BUILD_CMD="$BUILD_CMD --build-cli"
-          fi
-
-          if [ ${{ inputs.build-micro }} == true ]; then
-              BUILD_CMD="$BUILD_CMD --build-micro"
-          fi
-
-          if [ ${{ inputs.enable-zts }} == true ]; then
-              BUILD_CMD="$BUILD_CMD --enable-zts"
-          fi
-
-          echo 'download='"$DOWN_CMD" >> "$GITHUB_OUTPUT"
-          echo 'build='"$BUILD_CMD" >> "$GITHUB_OUTPUT"
-          echo 'runs_on='"$RUNS_ON" >> "$GITHUB_OUTPUT"
-          echo 'fix='"$FIX_CMD" >> "$GITHUB_OUTPUT"
   build:
     name: "Build PHP ${{ inputs.php-version }} for ${{ inputs.os }}"
-    runs-on: ${{ needs.define-build.outputs.runs_on }}
-    needs: define-build
+    runs-on: ${{ inputs.os == 'macos-x86_64' && 'macos-15-intel' || 'macos-15' }}
     timeout-minutes: 240
     steps:
       - name: "Checkout"
@@ -137,12 +78,9 @@ jobs:
       - name: "Configure webview extension"
         working-directory: static-php-cli
         run: |
-          # Add webview extension configuration to config/ext.json
           if [ ! -f config/ext.json ]; then
             echo '{}' > config/ext.json
           fi
-
-          # Create temporary config with webview extension
           cat config/ext.json | jq '. + {
             "webview": {
               "type": "external",
@@ -152,16 +90,11 @@ jobs:
             }
           }' > config/ext.json.tmp && mv config/ext.json.tmp config/ext.json
 
-          # Add webview source configuration to config/source.json
           if [ ! -f config/source.json ]; then
             echo '{}' > config/source.json
           fi
 
-          # Get current branch/ref
           CURRENT_REF="${{ github.ref_name }}"
-          echo "📌 Using branch/ref: $CURRENT_REF"
-
-          # Create temporary config with webview source
           cat config/source.json | jq --arg ref "$CURRENT_REF" '. + {
             "webview": {
               "type": "git",
@@ -175,16 +108,9 @@ jobs:
             }
           }' > config/source.json.tmp && mv config/source.json.tmp config/source.json
 
-          echo "✅ Webview extension configured"
-          echo "📄 Extension config:"
-          cat config/ext.json | jq '.webview'
-          echo "📄 Source config:"
-          cat config/source.json | jq '.webview'
-
       - name: "Generate cache key"
         run: echo "EXTENSIONS_KEY=$(echo '${{ inputs.extensions }}' | tr ',' '-')" >> "$GITHUB_ENV"
 
-      # Cache downloaded source
       - id: cache-download
         name: "Cache downloaded source"
         uses: actions/cache@v4
@@ -194,17 +120,46 @@ jobs:
 
       - name: "Download sources"
         working-directory: static-php-cli
-        run: ${{ needs.define-build.outputs.download }}
+        run: |
+          DOWN_CMD="./bin/spc download --with-php=${{ inputs.php-version }} --for-extensions=${{ inputs.extensions }} --ignore-cache-sources=php-src --prefer-pre-built"
+          if [ -n "${{ inputs.extra-libs }}" ]; then
+            DOWN_CMD="$DOWN_CMD --for-libs=${{ inputs.extra-libs }}"
+          fi
+          if [ "${{ inputs.debug }}" == "true" ]; then
+            DOWN_CMD="$DOWN_CMD --debug"
+          fi
+          eval "$DOWN_CMD"
 
       - name: "Run doctor"
         working-directory: static-php-cli
-        run: ${{ needs.define-build.outputs.fix }}
+        run: |
+          FIX_CMD="./bin/spc doctor --auto-fix"
+          if [ "${{ inputs.debug }}" == "true" ]; then
+            FIX_CMD="$FIX_CMD --debug"
+          fi
+          eval "$FIX_CMD"
 
       - name: "Build PHP"
         working-directory: static-php-cli
-        run: ${{ needs.define-build.outputs.build }}
+        run: |
+          BUILD_CMD="./bin/spc build ${{ inputs.extensions }}"
+          if [ -n "${{ inputs.extra-libs }}" ]; then
+            BUILD_CMD="$BUILD_CMD --with-libs=${{ inputs.extra-libs }}"
+          fi
+          if [ "${{ inputs.debug }}" == "true" ]; then
+            BUILD_CMD="$BUILD_CMD --debug"
+          fi
+          if [ "${{ inputs.build-cli }}" == "true" ]; then
+            BUILD_CMD="$BUILD_CMD --build-cli"
+          fi
+          if [ "${{ inputs.build-micro }}" == "true" ]; then
+            BUILD_CMD="$BUILD_CMD --build-micro"
+          fi
+          if [ "${{ inputs.enable-zts }}" == "true" ]; then
+            BUILD_CMD="$BUILD_CMD --enable-zts"
+          fi
+          eval "$BUILD_CMD"
 
-      # Upload cli executable
       - if: ${{ inputs.build-cli == true }}
         name: "Upload PHP cli SAPI"
         uses: actions/upload-artifact@v4
@@ -212,7 +167,6 @@ jobs:
           name: php-cli-${{ inputs.php-version }}-${{ inputs.os }}
           path: static-php-cli/buildroot/bin/php
 
-      # Upload micro self-extracted executable
       - if: ${{ inputs.build-micro == true }}
         name: "Upload PHP micro SAPI"
         uses: actions/upload-artifact@v4
@@ -220,12 +174,12 @@ jobs:
           name: php-micro-${{ inputs.php-version }}-${{ inputs.os }}
           path: static-php-cli/buildroot/bin/micro.sfx
 
-      # Upload extensions metadata
       - uses: actions/upload-artifact@v4
         name: "Upload License files"
         with:
           name: license-files-${{ inputs.php-version }}-${{ inputs.os }}
           path: static-php-cli/buildroot/license/
+
       - uses: actions/upload-artifact@v4
         name: "Upload Build metadata"
         with:

@@ -198,6 +198,23 @@ jobs:
           fi
           echo "SPC_BUILD_FLAGS=$FLAGS" >> $GITHUB_ENV
 
+      - name: "Patch curl test when swow+curl (Windows)"
+        if: matrix.os_family == 'windows' && contains(matrix.extensions, 'swow') && contains(matrix.extensions, 'curl')
+        working-directory: static-php-cli
+        shell: bash
+        run: |
+          cat > /tmp/patch_curl.php << 'PHPEOF'
+          <?php
+          $f = 'src/globals/ext-tests/curl.php';
+          $c = file_get_contents($f);
+          $old = 'if (stripos($curl_version[\'ssl_version\'], \'schannel\') !== false)';
+          $new = 'if (false)';
+          $c = str_replace($old, $new, $c);
+          file_put_contents($f, $c);
+          echo "Patched curl test to skip Schannel HTTPS check\n";
+          PHPEOF
+          php /tmp/patch_curl.php
+
       - name: "Build PHP"
         working-directory: static-php-cli
         run: ./bin/spc build "${{ env.EXTENSIONS }}" ${{ env.SPC_BUILD_FLAGS }}

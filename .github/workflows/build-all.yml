@@ -266,14 +266,16 @@ jobs:
           for dir in artifacts/*/; do
             [ -d "$dir" ] || continue
             dirname=$(basename "$dir")
-            for f in "$dir"/*; do
-              [ -f "$f" ] || continue
-              cp "$f" "release-assets/${dirname}_$(basename "$f")"
-            done
+
+            if [[ "$dirname" == *windows* ]]; then
+              (cd "$dir" && zip -r "../../release-assets/${dirname}.zip" .)
+            else
+              tar -czf "release-assets/${dirname}.tar.gz" -C "$dir" .
+            fi
           done
 
       - uses: softprops/action-gh-release@v2
         with:
           files: release-assets/*
           tag_name: ${{ github.ref_name }}
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true

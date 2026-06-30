@@ -55,6 +55,7 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  STATIC_PHP_CLI_VERSION: "2.8.5"
 
 jobs:
   build:
@@ -74,7 +75,7 @@ jobs:
 
       - name: "Clone static-php-cli"
         run: |
-          git clone https://github.com/crazywhalecc/static-php-cli.git
+          git clone --depth 1 --branch "${{ env.STATIC_PHP_CLI_VERSION }}" https://github.com/crazywhalecc/static-php-cli.git
           cd static-php-cli
           composer update --no-dev
 

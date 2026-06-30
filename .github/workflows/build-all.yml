@@ -18,10 +18,11 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  STATIC_PHP_CLI_VERSION: "2.8.5"
 
 jobs:
   build:
-    name: "PHP ${{inputs.php-version}} (${{ matrix.os }})"
+    name: "PHP ${{ github.event_name == 'workflow_dispatch' && inputs.php-version || '8.5' }} (${{ matrix.os }})"
     strategy:
       fail-fast: false
       matrix:
@@ -83,7 +84,7 @@ jobs:
 
       - name: "Clone static-php-cli"
         run: |
-          git clone https://github.com/crazywhalecc/static-php-cli.git
+          git clone --depth 1 --branch "${{ env.STATIC_PHP_CLI_VERSION }}" https://github.com/crazywhalecc/static-php-cli.git
           cd static-php-cli
           composer update --no-dev --no-interaction
 
@@ -130,7 +131,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: static-php-cli/downloads
-          key: php-dependencies-${{ matrix.os_family }}-${{ env.PHP_VERSION }}-${{ env.EXTENSIONS_KEY }}
+          key: php-dependencies-${{ env.STATIC_PHP_CLI_VERSION }}-${{ matrix.os }}-${{ env.PHP_VERSION }}-${{ env.EXTENSIONS_KEY }}
 
       - name: "Setup (Linux)"
         if: matrix.os_family == 'linux'

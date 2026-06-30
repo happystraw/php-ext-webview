@@ -16,6 +16,7 @@ extern zend_module_entry webview_module_entry;
 typedef struct _php_webview_obj {
     webview_t webview;
     HashTable *bindings; // Store PHP callbacks for JS bindings
+    HashTable *unbound_bindings; // Keep recently unbound callbacks alive for queued calls
     zend_object std;
 } php_webview_obj;
 

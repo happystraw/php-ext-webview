@@ -56,9 +56,8 @@ WEBVIEW_API void php_webview_callback_release(php_webview_callback_t *callback)
     }
 }
 
-WEBVIEW_API void php_webview_binding_dtor(zval *zv)
+WEBVIEW_API void php_webview_binding_context_release(php_webview_binding_context_t *context)
 {
-    php_webview_binding_context_t *context = (php_webview_binding_context_t *)Z_PTR_P(zv);
     php_webview_callback_t *binding = context->binding;
 
     php_webview_callback_release(binding);

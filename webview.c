@@ -44,26 +44,48 @@ static zend_object *php_webview_create_object(zend_class_entry *ce)
 
     intern->webview = NULL;
     intern->bindings = NULL;
+    intern->unbound_bindings = NULL;
 
     intern->std.handlers = &webview_object_handlers;
 
     return &intern->std;
 }
 
-static void php_webview_free_object(zend_object *object)
+static void php_webview_free_binding_table(HashTable *table)
 {
-    php_webview_obj *intern = php_webview_from_obj(object);
+    php_webview_binding_context_t *context;
 
+    ZEND_HASH_FOREACH_PTR(table, context) {
+        php_webview_binding_context_release(context);
+    } ZEND_HASH_FOREACH_END();
+
+    zend_hash_destroy(table);
+    FREE_HASHTABLE(table);
+}
+
+static void php_webview_destroy_resources(php_webview_obj *intern)
+{
     if (intern->webview) {
         webview_destroy(intern->webview);
         intern->webview = NULL;
     }
 
     if (intern->bindings) {
-        zend_hash_destroy(intern->bindings);
-        FREE_HASHTABLE(intern->bindings);
+        php_webview_free_binding_table(intern->bindings);
         intern->bindings = NULL;
     }
+
+    if (intern->unbound_bindings) {
+        php_webview_free_binding_table(intern->unbound_bindings);
+        intern->unbound_bindings = NULL;
+    }
+}
+
+static void php_webview_free_object(zend_object *object)
+{
+    php_webview_obj *intern = php_webview_from_obj(object);
+
+    php_webview_destroy_resources(intern);
 
     zend_object_std_dtor(&intern->std);
 }
@@ -86,6 +108,11 @@ PHP_METHOD(Webview_Webview, __construct)
 
     intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
 
+    if (intern->webview || intern->bindings || intern->unbound_bindings) {
+        php_webview_throw_webview_exception(WEBVIEW_ERROR_INVALID_STATE, "Webview instance is already initialized");
+        RETURN_THROWS();
+    }
+
     intern->webview = webview_create(debug ? 1 : 0, NULL);
     if (!intern->webview) {
         php_webview_throw_webview_exception(WEBVIEW_ERROR_MISSING_DEPENDENCY, "Failed to create webview instance");
@@ -93,7 +120,10 @@ PHP_METHOD(Webview_Webview, __construct)
     }
 
     ALLOC_HASHTABLE(intern->bindings);
-    zend_hash_init(intern->bindings, 0, NULL, php_webview_binding_dtor, 0);
+    zend_hash_init(intern->bindings, 0, NULL, NULL, 0);
+
+    ALLOC_HASHTABLE(intern->unbound_bindings);
+    zend_hash_init(intern->unbound_bindings, 0, NULL, NULL, 0);
 }
 /* }}} */
 
@@ -102,12 +132,11 @@ PHP_METHOD(Webview_Webview, __destruct)
 {
     php_webview_obj *intern;
 
+    ZEND_PARSE_PARAMETERS_NONE();
+
     intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
 
-    // Clear all bindings to break potential circular references
-    if (intern->bindings) {
-        zend_hash_clean(intern->bindings);
-    }
+    php_webview_destroy_resources(intern);
 }
 /* }}} */
 
@@ -373,6 +402,7 @@ PHP_METHOD(Webview_Webview, bind)
     if (result != WEBVIEW_ERROR_OK) {
         // Clean up on failure
         zend_hash_str_del(intern->bindings, name, name_len);
+        php_webview_binding_context_release(context);
         char error_msg[256];
         snprintf(error_msg, sizeof(error_msg), "Failed to bind function: %s", name);
         php_webview_throw_webview_exception(result, error_msg);
@@ -387,6 +417,7 @@ PHP_METHOD(Webview_Webview, unbind)
     php_webview_obj *intern;
     char *name;
     size_t name_len;
+    php_webview_binding_context_t *context;
 
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_STRING(name, name_len)
@@ -399,6 +430,12 @@ PHP_METHOD(Webview_Webview, unbind)
         RETURN_THROWS();
     }
 
+    context = (php_webview_binding_context_t *)zend_hash_str_find_ptr(intern->bindings, name, name_len);
+    if (!context) {
+        php_webview_throw_webview_exception(WEBVIEW_ERROR_NOT_FOUND, "Binding not found");
+        RETURN_THROWS();
+    }
+
     // Remove from webview
     webview_error_t result = webview_unbind(intern->webview, name);
 
@@ -407,8 +444,10 @@ PHP_METHOD(Webview_Webview, unbind)
         RETURN_THROWS();
     }
 
-    // Remove from bindings hashtable
+    // Keep the context alive until webview is destroyed because already queued
+    // binding calls may still reference the arg pointer copied by libwebview.
     zend_hash_str_del(intern->bindings, name, name_len);
+    zend_hash_next_index_insert_ptr(intern->unbound_bindings, context);
 }
 /* }}} */
 

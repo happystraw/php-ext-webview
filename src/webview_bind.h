@@ -30,7 +30,7 @@ WEBVIEW_API webview_error_t php_webview_return_zend_string(webview_t w, const ch
 WEBVIEW_API webview_error_t php_webview_return_exception(webview_t w, const char *id, int status, zend_object *exception);
 WEBVIEW_API void php_webview_callback_addref(php_webview_callback_t *callback);
 WEBVIEW_API void php_webview_callback_release(php_webview_callback_t *callback);
-WEBVIEW_API void php_webview_binding_dtor(zval *zv);
+WEBVIEW_API void php_webview_binding_context_release(php_webview_binding_context_t *context);
 WEBVIEW_API void php_webview_binding_callback(const char *id, const char *req, void *arg);
 WEBVIEW_API void php_webview_dispatch_callback(webview_t w, void *arg);
 

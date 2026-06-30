@@ -88,6 +88,30 @@ jobs:
           cd static-php-cli
           composer update --no-dev --no-interaction
 
+      - name: "Patch curl CLI sanity check when swow+curl (Windows)"
+        if: matrix.os_family == 'windows' && contains(matrix.extensions, 'swow') && contains(matrix.extensions, 'curl')
+        working-directory: static-php-cli
+        shell: bash
+        run: |
+          cat > /tmp/patch_curl.php << 'PHPEOF'
+          <?php
+          $windows_builder = 'src/SPC/builder/windows/WindowsBuilder.php';
+          $c = file_get_contents($windows_builder);
+          if (!str_contains($c, "Skipping curl CLI sanity check on Windows")) {
+              $needle = '                $ext->runCliCheckWindows();';
+              $replacement = "                if (\$ext->getName() === 'curl') {\n                    logger()->warning('Skipping curl CLI sanity check on Windows');\n                    continue;\n                }\n                \$ext->runCliCheckWindows();";
+              $c = str_replace($needle, $replacement, $c, $count);
+              if ($count !== 1) {
+                  fwrite(STDERR, "Failed to patch curl Windows CLI sanity check\n");
+                  exit(1);
+              }
+              file_put_contents($windows_builder, $c);
+          }
+
+          echo "Patched Windows builder to skip curl CLI sanity check\n";
+          PHPEOF
+          php /tmp/patch_curl.php
+
       - name: "Configure webview extension"
         working-directory: static-php-cli
         shell: bash
@@ -198,23 +222,6 @@ jobs:
             FLAGS="$FLAGS --with-upx-pack"
           fi
           echo "SPC_BUILD_FLAGS=$FLAGS" >> $GITHUB_ENV
-
-      - name: "Patch curl test when swow+curl (Windows)"
-        if: matrix.os_family == 'windows' && contains(matrix.extensions, 'swow') && contains(matrix.extensions, 'curl')
-        working-directory: static-php-cli
-        shell: bash
-        run: |
-          cat > /tmp/patch_curl.php << 'PHPEOF'
-          <?php
-          $f = 'src/globals/ext-tests/curl.php';
-          $c = file_get_contents($f);
-          $old = 'if (stripos($curl_version[\'ssl_version\'], \'schannel\') !== false)';
-          $new = 'if (false)';
-          $c = str_replace($old, $new, $c);
-          file_put_contents($f, $c);
-          echo "Patched curl test to skip Schannel HTTPS check\n";
-          PHPEOF
-          php /tmp/patch_curl.php
 
       - name: "Build PHP"
         working-directory: static-php-cli

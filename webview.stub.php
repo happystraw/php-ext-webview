@@ -142,7 +142,9 @@ final class Webview
     /**
      * Bind a PHP function to a JavaScript function
      *
-     * callback must be a callable with the following signature:
+     * The callback must use the following signature:
+     * callback(string $id, string $req): string|void
+     *
      * params:
      * - id:  a string identifier for the binding call.
      * - req: a JSON-encoded string containing the arguments passed from JavaScript.
@@ -152,8 +154,8 @@ final class Webview
      * This method is blocked until the binding is complete,
      * next lib webview version this maybe changed.
      *
-     * @param string                                                                        $name     Name of the JavaScript function
-     * @param callable(string $id,string $req):string|callable(string $id,string $req):void $callback PHP callback function
+     * @param string   $name     Name of the JavaScript function
+     * @param callable $callback PHP callback function
      *
      * @return void
      *
@@ -197,7 +199,10 @@ final class Webview
      *
      * Next lib webview version this maybe removed.
      *
-     * @param callable():void $callback The function to invoke
+     * The callback must use the following signature:
+     * callback(): void
+     *
+     * @param callable $callback The function to invoke
      *
      * @return void
      *

@@ -40,16 +40,28 @@ WEBVIEW_API webview_error_t php_webview_return_exception(webview_t w, const char
     return result;
 }
 
+WEBVIEW_API void php_webview_callback_addref(php_webview_callback_t *callback)
+{
+    Z_TRY_ADDREF(callback->fci.function_name);
+    if (callback->fcc.object) {
+        GC_ADDREF(callback->fcc.object);
+    }
+}
+
+WEBVIEW_API void php_webview_callback_release(php_webview_callback_t *callback)
+{
+    zval_ptr_dtor(&callback->fci.function_name);
+    if (callback->fcc.object) {
+        OBJ_RELEASE(callback->fcc.object);
+    }
+}
+
 WEBVIEW_API void php_webview_binding_dtor(zval *zv)
 {
     php_webview_binding_context_t *context = (php_webview_binding_context_t *)Z_PTR_P(zv);
     php_webview_callback_t *binding = context->binding;
 
-    // Release callback references
-    if (binding->fci.object) {
-        GC_DELREF(binding->fci.object);
-    }
-    zval_ptr_dtor(&binding->fci.function_name);
+    php_webview_callback_release(binding);
 
     efree(binding);
     efree(context);
@@ -127,10 +139,7 @@ WEBVIEW_API void php_webview_dispatch_callback(webview_t w, void *arg)
     zval_ptr_dtor(&retval);
 
     // Free the context and callback references
-    if (context->fn->fci.object) {
-        GC_DELREF(context->fn->fci.object);
-    }
-    zval_ptr_dtor(&context->fn->fci.function_name);
+    php_webview_callback_release(context->fn);
     efree(context->fn);
     efree(context);
 }

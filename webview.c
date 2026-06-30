@@ -362,10 +362,7 @@ PHP_METHOD(Webview_Webview, bind)
     context->webview = intern->webview;
 
     // Add reference to callback
-    Z_TRY_ADDREF(fci.function_name);
-    if (fci.object) {
-        GC_ADDREF(fci.object);
-    }
+    php_webview_callback_addref(binding);
 
     // Store context in hashtable (not just binding)
     zend_hash_str_add_ptr(intern->bindings, name, name_len, context);
@@ -476,20 +473,14 @@ PHP_METHOD(Webview_Webview, dispatch)
     context->webview = intern->webview;
 
     // Add reference to callback
-    Z_TRY_ADDREF(fci.function_name);
-    if (fci.object) {
-        GC_ADDREF(fci.object);
-    }
+    php_webview_callback_addref(fn);
 
     // Dispatch to webview
     webview_error_t result = webview_dispatch(intern->webview, php_webview_dispatch_callback, context);
 
     if (result != WEBVIEW_ERROR_OK) {
         // Clean up on failure
-        if (fn->fci.object) {
-            GC_DELREF(fn->fci.object);
-        }
-        zval_ptr_dtor(&fn->fci.function_name);
+        php_webview_callback_release(fn);
         efree(fn);
         efree(context);
         php_webview_throw_webview_exception(result, "Failed to dispatch callback");

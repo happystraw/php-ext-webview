@@ -27,6 +27,7 @@
 
 // Global class entries
 zend_class_entry *webview_hint_ce;
+zend_class_entry *webview_bind_mode_ce;
 zend_class_entry *webview_ce;
 zend_class_entry *webview_exception_ce;
 
@@ -350,7 +351,7 @@ PHP_METHOD(Webview_Webview, eval)
 }
 /* }}} */
 
-/* {{{ Webview::bind(string $name, callable $callback): void */
+/* {{{ Webview::bind(string $name, callable $callback, WebviewBindMode $mode = WebviewBindMode::AUTO): void */
 PHP_METHOD(Webview_Webview, bind)
 {
     php_webview_obj *intern;
@@ -359,10 +360,14 @@ PHP_METHOD(Webview_Webview, bind)
     zend_fcall_info fci;
     zend_fcall_info_cache fcc;
     php_webview_callback_t *binding;
+    zval *mode = NULL;
+    zend_long mode_value = PHP_WEBVIEW_BIND_MODE_AUTO;
 
-    ZEND_PARSE_PARAMETERS_START(2, 2)
+    ZEND_PARSE_PARAMETERS_START(2, 3)
         Z_PARAM_STRING(name, name_len)
         Z_PARAM_FUNC(fci, fcc)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_OBJECT_OF_CLASS(mode, webview_bind_mode_ce)
     ZEND_PARSE_PARAMETERS_END();
 
     intern = Z_WEBVIEW_OBJ_P(ZEND_THIS);
@@ -389,6 +394,12 @@ PHP_METHOD(Webview_Webview, bind)
     php_webview_binding_context_t *context = (php_webview_binding_context_t*)emalloc(sizeof(php_webview_binding_context_t));
     context->binding = binding;
     context->webview = intern->webview;
+
+    if (mode != NULL) {
+        zval *backing_value = zend_enum_fetch_case_value(Z_OBJ_P(mode));
+        mode_value = Z_LVAL_P(backing_value);
+    }
+    context->bind_mode = mode_value;
 
     // Add reference to callback
     php_webview_callback_addref(binding);
@@ -836,6 +847,7 @@ PHP_MINIT_FUNCTION(webview)
     webview_exception_ce = register_class_Webview_WebviewException(zend_ce_exception);
 
     webview_hint_ce = register_class_Webview_WebviewHint();
+    webview_bind_mode_ce = register_class_Webview_WebviewBindMode();
 
     webview_ce = register_class_Webview_Webview();
     webview_ce->create_object = php_webview_create_object;

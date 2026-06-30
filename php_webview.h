@@ -22,6 +22,7 @@ typedef struct _php_webview_obj {
 
 // Class entries
 extern zend_class_entry *webview_hint_ce;
+extern zend_class_entry *webview_bind_mode_ce;
 extern zend_class_entry *webview_ce;
 extern zend_class_entry *webview_exception_ce;
 

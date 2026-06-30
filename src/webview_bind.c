@@ -40,6 +40,54 @@ WEBVIEW_API webview_error_t php_webview_return_exception(webview_t w, const char
     return result;
 }
 
+static webview_error_t php_webview_return_zval(webview_t w, const char *id, zval *value)
+{
+    webview_error_t result;
+    smart_str json = {0};
+    zend_result encode_result;
+
+    if (Z_ISNULL_P(value)) {
+        return webview_return(w, id, 0, "");
+    }
+
+    encode_result = php_json_encode(&json, value, 0);
+    if (encode_result == SUCCESS && JSON_G(error_code) == PHP_JSON_ERROR_NONE && json.s) {
+        smart_str_0(&json);
+        result = webview_return(w, id, 0, ZSTR_VAL(json.s));
+    } else if (EG(exception)) {
+        zend_object *exception = EG(exception);
+        zend_exception_error(exception, E_WARNING);
+        result = php_webview_return_exception(w, id, 1, exception);
+        zend_clear_exception();
+    } else {
+        result = webview_return(w, id, 1, "\"PHP binding callback return value is not JSON encodable\"");
+    }
+
+    smart_str_free(&json);
+    return result;
+}
+
+static zend_result php_webview_decode_binding_args(zval *args, const char *req)
+{
+    ZVAL_UNDEF(args);
+
+    if (php_json_decode(args, req, strlen(req), true, PHP_JSON_PARSER_DEFAULT_DEPTH) != SUCCESS) {
+        if (Z_TYPE_P(args) != IS_UNDEF) {
+            zval_ptr_dtor(args);
+        }
+        ZVAL_UNDEF(args);
+        return FAILURE;
+    }
+
+    if (Z_TYPE_P(args) != IS_ARRAY) {
+        zval_ptr_dtor(args);
+        ZVAL_UNDEF(args);
+        return FAILURE;
+    }
+
+    return SUCCESS;
+}
+
 WEBVIEW_API void php_webview_callback_addref(php_webview_callback_t *callback)
 {
     Z_TRY_ADDREF(callback->fci.function_name);
@@ -71,14 +119,30 @@ WEBVIEW_API void php_webview_binding_callback(const char *id, const char *req, v
     php_webview_binding_context_t *context = (php_webview_binding_context_t *)arg;
     php_webview_callback_t *binding = context->binding;
     zval args[2];
+    zval decoded_args;
     zval retval;
+    uint32_t param_count = 0;
     webview_error_t result = WEBVIEW_ERROR_OK;
 
-    ZVAL_STRING(&args[0], id);
-    ZVAL_STRING(&args[1], req);
+    ZVAL_UNDEF(&decoded_args);
+    ZVAL_UNDEF(&retval);
+
+    if (php_webview_decode_binding_args(&decoded_args, req) != SUCCESS) {
+        result = webview_return(context->webview, id, 1, "\"PHP binding callback arguments are not a JSON array\"");
+        goto cleanup;
+    }
+
+    if (context->bind_mode == PHP_WEBVIEW_BIND_MODE_AUTO) {
+        ZVAL_COPY(&args[0], &decoded_args);
+        param_count = 1;
+    } else {
+        ZVAL_STRING(&args[0], id);
+        ZVAL_COPY(&args[1], &decoded_args);
+        param_count = 2;
+    }
 
     binding->fci.retval = &retval;
-    binding->fci.param_count = 2;
+    binding->fci.param_count = param_count;
     binding->fci.params = args;
 
     ZVAL_NULL(&retval);
@@ -88,25 +152,28 @@ WEBVIEW_API void php_webview_binding_callback(const char *id, const char *req, v
             // Handle exception thrown in PHP function
             zend_object *exception = EG(exception);
             zend_exception_error(exception, E_WARNING);
-            php_webview_return_exception(context->webview, id, 1, exception);
+            result = php_webview_return_exception(context->webview, id, 1, exception);
             zend_clear_exception();
-        } else {
-            if (!Z_ISNULL(retval)) {
-                // Handle normal return value - convert to string and return to webview
-                zend_string *result_str = zval_get_string(&retval);
-                result = php_webview_return_zend_string(context->webview, id, 0, result_str, 0);
-                zend_string_release(result_str);
-            }
+        } else if (context->bind_mode == PHP_WEBVIEW_BIND_MODE_AUTO) {
+            result = php_webview_return_zval(context->webview, id, &retval);
         }
     } else {
         // Return error if PHP function call failed
         result = webview_return(context->webview, id, 1, "\"PHP function call failed\"");
     }
 
-    zval_ptr_dtor(&retval);
+cleanup:
+    if (Z_TYPE(retval) != IS_UNDEF) {
+        zval_ptr_dtor(&retval);
+    }
 
-    zval_ptr_dtor(&args[0]);
-    zval_ptr_dtor(&args[1]);
+    for (uint32_t i = 0; i < param_count; i++) {
+        zval_ptr_dtor(&args[i]);
+    }
+
+    if (Z_TYPE(decoded_args) != IS_UNDEF) {
+        zval_ptr_dtor(&decoded_args);
+    }
 
     if (result != WEBVIEW_ERROR_OK) {
         php_error_docref(NULL, E_WARNING, "Failed to return result to webview: %s", webview_error_to_string(result));

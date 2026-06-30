@@ -28,12 +28,12 @@ $w->bind('hide_show', function() use ($w) {
     $w->eval('setTimeout(() => { window.show(); }, 2000);');
 });
 $w->bind('show', fn() => $w->show());
-$w->bind('checkStatus', fn() => json_encode([
+$w->bind('checkStatus', fn() => [
     'isFullscreen' => $w->isFullscreen(),
     'isMaximized' => $w->isMaximized(),
     'isMinimized' => $w->isMinimized(),
-    'isVisible' => $w->isVisible()
-]));
+    'isVisible' => $w->isVisible(),
+]);
 $w->bind('logStatus', function() use ($w) {
     echo "Current Window Status:\n";
     echo "- Fullscreen: " . ($w->isFullscreen() ? 'Yes' : 'No') . "\n";

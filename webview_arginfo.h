@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 9be21fa2c35f33b3c0fe2f9360ff19ed6b037f90 */
+ * Stub hash: 8f55b2aa501f8d6831f04435bd8078980b6938f0 */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_Webview_Webview___construct, 0, 0, 0)
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, debug, _IS_BOOL, 0, "false")
@@ -40,6 +40,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Webview_Webview_bind, 0, 2, IS_VOID, 0)
 	ZEND_ARG_TYPE_INFO(0, name, IS_STRING, 0)
 	ZEND_ARG_TYPE_INFO(0, callback, IS_CALLABLE, 0)
+	ZEND_ARG_OBJ_INFO_WITH_DEFAULT_VALUE(0, mode, Webview\\WebviewBindMode, 0, "Webview\\WebviewBindMode::AUTO")
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_Webview_Webview_unbind, 0, 1, IS_VOID, 0)
@@ -123,6 +124,11 @@ static const zend_function_entry class_Webview_WebviewHint_methods[] = {
 };
 
 
+static const zend_function_entry class_Webview_WebviewBindMode_methods[] = {
+	ZEND_FE_END
+};
+
+
 static const zend_function_entry class_Webview_Webview_methods[] = {
 	ZEND_ME(Webview_Webview, __construct, arginfo_class_Webview_Webview___construct, ZEND_ACC_PUBLIC)
 	ZEND_ME(Webview_Webview, __destruct, arginfo_class_Webview_Webview___destruct, ZEND_ACC_PUBLIC)
@@ -183,6 +189,21 @@ static zend_class_entry *register_class_Webview_WebviewHint(void)
 	zval enum_case_FIXED_value;
 	ZVAL_LONG(&enum_case_FIXED_value, 3);
 	zend_enum_add_case_cstr(class_entry, "FIXED", &enum_case_FIXED_value);
+
+	return class_entry;
+}
+
+static zend_class_entry *register_class_Webview_WebviewBindMode(void)
+{
+	zend_class_entry *class_entry = zend_register_internal_enum("Webview\\WebviewBindMode", IS_LONG, class_Webview_WebviewBindMode_methods);
+
+	zval enum_case_AUTO_value;
+	ZVAL_LONG(&enum_case_AUTO_value, 0);
+	zend_enum_add_case_cstr(class_entry, "AUTO", &enum_case_AUTO_value);
+
+	zval enum_case_MANUAL_value;
+	ZVAL_LONG(&enum_case_MANUAL_value, 1);
+	zend_enum_add_case_cstr(class_entry, "MANUAL", &enum_case_MANUAL_value);
 
 	return class_entry;
 }

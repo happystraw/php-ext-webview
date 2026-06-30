@@ -7,6 +7,7 @@
 declare(strict_types=1);
 
 use Webview\Webview;
+use Webview\WebviewBindMode;
 use Webview\WebviewHint;
 
 $count = 0;
@@ -15,17 +16,19 @@ $w = new Webview(true);
 $w->setTitle('Bind Webview');
 $w->setSize(480, 320, WebviewHint::NONE);
 
-$w->bind('add', function (string $id, string $req) use ($w): void {
-    global $count;
-    $num = \json_decode($req, true)[0] ?? $num;
+// MANUAL mode
+$w->bind('add', function (string $id, array $args) use ($w, &$count): void {
+    $num = $args[0] ?? 0;
     $count += $num;
     // use $w->return() to return the result to the JavaScript side
     $w->return($id, 0, \json_encode(['count' => $count]));
-});
-$w->bind('hello', function (string $id, string $req): string {
-    $name = \json_decode($req, true)[0] ?? 'World';
+}, WebviewBindMode::MANUAL);
+
+// AUTO mode
+$w->bind('hello', function (array $args): array {
+    $name = $args[0] ?? 'World';
     // directly return the result to the JavaScript side
-    return \json_encode(['message' => 'Hello ' . $name . '. This is a message from PHP.']);
+    return ['message' => 'Hello ' . $name . '. This is a message from PHP.'];
 });
 
 $w->setHtml((string)file_get_contents(__FILE__, offset: __COMPILER_HALT_OFFSET__));

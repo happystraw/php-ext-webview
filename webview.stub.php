@@ -33,6 +33,22 @@ enum WebviewHint: int
 }
 
 /**
+ * Binding callback return mode.
+ */
+enum WebviewBindMode: int
+{
+    /**
+     * Automatically JSON-encode the callback return value and send it to JavaScript.
+     */
+    case AUTO = 0;
+
+    /**
+     * Disable automatic return handling. The callback must call return() explicitly.
+     */
+    case MANUAL = 1;
+}
+
+/**
  * PHP Webview class - A tiny cross-platform webview library
  *
  * @package Webview
@@ -142,27 +158,36 @@ final class Webview
     /**
      * Bind a PHP function to a JavaScript function
      *
-     * The callback must use the following signature:
-     * callback(string $id, string $req): string|void
+     * In WebviewBindMode::AUTO, callbacks receive the following arguments:
+     * callback(array $args): mixed
+     *
+     * The return value is JSON-encoded by the extension and returned to JavaScript.
+     * null or no return value resolves to JavaScript undefined.
+     * Do not call return() manually in AUTO mode.
+     *
+     * In WebviewBindMode::MANUAL, callbacks receive the following arguments
+     * and call return() exactly once:
+     * callback(string $id, array $args): void
+     *
+     * The callback return value is ignored in MANUAL mode.
      *
      * params:
-     * - id:  a string identifier for the binding call.
-     * - req: a JSON-encoded string containing the arguments passed from JavaScript.
-     * returns: optional, either a JSON-encoded string to be returned to JavaScript.
-     *          see return() for details.
+     * - id:   a string identifier for the binding call, only passed in MANUAL mode.
+     * - args: decoded JavaScript arguments. If no arguments are passed, args is [].
      *
      * This method is blocked until the binding is complete,
      * next lib webview version this maybe changed.
      *
-     * @param string   $name     Name of the JavaScript function
-     * @param callable $callback PHP callback function
+     * @param string          $name     Name of the JavaScript function
+     * @param callable        $callback PHP callback function
+     * @param WebviewBindMode $mode     Binding callback return mode
      *
      * @return void
      *
      * @throws WebviewException on failure
      *
      */
-    public function bind(string $name, callable $callback): void {}
+    public function bind(string $name, callable $callback, WebviewBindMode $mode = WebviewBindMode::AUTO): void {}
 
     /**
      * Remove a binding created with bind()
@@ -184,7 +209,7 @@ final class Webview
      *                       successful; any other value indicates an error.
      * @param string $result The result of the binding call to be returned to the JS side.
      *                       This must either be a valid JSON value or an empty string for
-     *                       the primitive JS value.
+     *                       the primitive JS value undefined.
      *
      * @throws WebviewException on failure
      */

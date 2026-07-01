@@ -55,7 +55,6 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  STATIC_PHP_CLI_VERSION: "2.8.5"
 
 jobs:
   build:
@@ -75,82 +74,37 @@ jobs:
 
       - name: "Clone static-php-cli"
         run: |
-          git clone --depth 1 --branch "${{ env.STATIC_PHP_CLI_VERSION }}" https://github.com/crazywhalecc/static-php-cli.git
+          git clone --depth 1 https://github.com/crazywhalecc/static-php-cli.git
           cd static-php-cli
-          composer update --no-dev
+          composer install --no-dev --no-interaction --prefer-dist
 
-      - name: "Patch curl CLI sanity check when swow+curl"
-        if: contains(inputs.extensions, 'swow') && contains(inputs.extensions, 'curl')
+      - name: "Configure StaticPHP v3"
+        shell: bash
         working-directory: static-php-cli
-        shell: bash
         run: |
-          cat > /tmp/patch_curl.php << 'PHPEOF'
-          <?php
-          $windows_builder = 'src/SPC/builder/windows/WindowsBuilder.php';
-          $c = file_get_contents($windows_builder);
-          if (!str_contains($c, "Skipping curl CLI sanity check on Windows")) {
-              $needle = '                $ext->runCliCheckWindows();';
-              $replacement = "                if (\$ext->getName() === 'curl') {\n                    logger()->warning('Skipping curl CLI sanity check on Windows');\n                    continue;\n                }\n                \$ext->runCliCheckWindows();";
-              $c = str_replace($needle, $replacement, $c, $count);
-              if ($count !== 1) {
-                  fwrite(STDERR, "Failed to patch curl Windows CLI sanity check\n");
-                  exit(1);
-              }
-              file_put_contents($windows_builder, $c);
-          }
-
-          echo "Patched Windows builder to skip curl CLI sanity check\n";
-          PHPEOF
-          php /tmp/patch_curl.php
-
-      - name: "Configure webview extension"
-        shell: bash
-        run: |
-          cd static-php-cli
-
-          # Add webview extension configuration to config/ext.json
-          if [ ! -f config/ext.json ]; then
-            echo '{}' > config/ext.json
+          SAPI=""
+          if [ "${{ inputs.build-cli }}" = "true" ]; then
+            SAPI="${SAPI:+$SAPI,}cli"
           fi
-
-          # Create temporary config with webview extension
-          cat config/ext.json | jq '. + {
-            "webview": {
-              "type": "external",
-              "source": "webview",
-              "frameworks": ["WebKit"],
-              "cpp-extension": true
-            }
-          }' > config/ext.json.tmp && mv config/ext.json.tmp config/ext.json
-
-          # Add webview source configuration to config/source.json
-          if [ ! -f config/source.json ]; then
-            echo '{}' > config/source.json
+          if [ "${{ inputs.build-micro }}" = "true" ]; then
+            SAPI="${SAPI:+$SAPI,}micro"
           fi
-
-          # Get current branch/ref
-          CURRENT_REF="${{ github.ref_name }}"
-          echo "📌 Using branch/ref: $CURRENT_REF"
-
-          # Create temporary config with webview source
-          cat config/source.json | jq --arg ref "$CURRENT_REF" '. + {
-            "webview": {
-              "type": "git",
-              "path": "php-src/ext/webview",
-              "rev": $ref,
-              "url": "https://github.com/happystraw/php-ext-webview",
-              "license": {
-                "type": "file",
-                "path": "LICENSE"
-              }
-            }
-          }' > config/source.json.tmp && mv config/source.json.tmp config/source.json
-
-          echo "✅ Webview extension configured"
-          echo "📄 Extension config:"
-          cat config/ext.json | jq '.webview'
-          echo "📄 Source config:"
-          cat config/source.json | jq '.webview'
+          if [ -z "$SAPI" ]; then
+            echo "At least one SAPI must be enabled" >&2
+            exit 1
+          fi
+          ../scripts/configure-spc-v3-webview.sh
+          ../scripts/configure-spc-v3-craft.sh \
+            --php-version "${{ inputs.php-version }}" \
+            --extensions "${{ inputs.extensions }}" \
+            --packages "${{ inputs.extra-libs }}" \
+            --sapi "${SAPI}" \
+            --debug "${{ inputs.debug }}" \
+            --no-strip "${{ inputs.no-strip }}" \
+            --enable-zts "${{ inputs.enable-zts }}" \
+            --enable-micro-win32 "${{ inputs.enable-micro-win32 }}" \
+            --with-upx-pack "${{ inputs.with-upx-pack }}" \
+            --download-parallel 1
 
       - name: "Generate cache key"
         shell: bash
@@ -162,52 +116,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: static-php-cli/downloads
-          key: php-dependencies-windows-${{ inputs.php-version }}-${{ env.EXTENSIONS_KEY }}
+          key: php-dependencies-v3-windows-${{ inputs.php-version }}-${{ env.EXTENSIONS_KEY }}
 
-      - if: ${{ inputs.build-cli == true }}
-        name: "Build for cli binary"
-        run: echo "SPC_BUILD_CLI=--build-cli" >> $env:GITHUB_ENV
-
-      - if: ${{ inputs.build-micro == true }}
-        name: "Build for micro binary"
-        run: echo "SPC_BUILD_MICRO=--build-micro" >> $env:GITHUB_ENV
-
-      - if: inputs.debug == true
-        name: "[Optional] Display full build logs"
-        run: echo "SPC_DEBUG=--debug" >> $env:GITHUB_ENV
-
-      # - if: inputs.prefer-pre-built == true
-      - name: "[Optional] Prefer pre-built binaries"
-        run: echo "SPC_PRE_BUILT=--prefer-pre-built" >> $env:GITHUB_ENV
-
-      - if: inputs.with-upx-pack == true
-        name: "[Optional] Pack with UPX"
-        run: echo "SPC_UPX_PACK=--with-upx-pack" >> $env:GITHUB_ENV
-
-      - if: inputs.enable-micro-win32 == true
-        name: "[Optional] Enable micro win32"
-        run: echo "SPC_ENABLE_MICRO_WIN32=--enable-micro-win32" >> $env:GITHUB_ENV
-
-      - if: inputs.enable-zts == true
-        name: "[Optional] Enable zts"
-        run: echo "SPC_ENABLE_ZTS=--enable-zts" >> $env:GITHUB_ENV
-
-      - name: "Run doctor"
-        shell: bash
-        run: |
-          cd static-php-cli
-          ./bin/spc doctor --auto-fix
-
-      - name: "Download sources"
+      - name: "Autofix build environment"
         working-directory: static-php-cli
-        run: |
-          ./bin/spc download --with-php="${{ inputs.php-version }}" --for-extensions="${{ inputs.extensions }}" ${{ env.SPC_DEBUG }} ${{ env.SPC_PRE_BUILT }}
-          ./bin/spc install-pkg upx
+        run: ./bin/spc doctor --auto-fix
 
-      - name: "Build PHP"
+      - name: "Craft build"
         working-directory: static-php-cli
-        run: |
-          ./bin/spc build "${{ inputs.extensions }}" ${{ env.SPC_BUILD_CLI }} ${{ env.SPC_BUILD_MICRO }} ${{ env.SPC_DEBUG }} ${{ env.SPC_UPX_PACK }} ${{ env.SPC_ENABLE_MICRO_WIN32 }} ${{ env.SPC_ENABLE_ZTS }}
+        run: ./bin/spc craft craft.yml
 
       - if: ${{ inputs.build-cli == true }}
         name: "Upload PHP cli executable"
@@ -233,6 +150,4 @@ jobs:
         name: "Upload Build metadata"
         with:
           name: build-meta-${{ inputs.php-version }}-windows
-          path: |
-            static-php-cli/buildroot/build-extensions.json
-            static-php-cli/buildroot/build-libraries.json
+          path: static-php-cli/buildroot/.build.json

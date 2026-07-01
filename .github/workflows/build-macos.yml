@@ -51,7 +51,6 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  STATIC_PHP_CLI_VERSION: "2.8.5"
 
 jobs:
   build:
@@ -72,42 +71,33 @@ jobs:
 
       - name: "Clone static-php-cli"
         run: |
-          git clone --depth 1 --branch "${{ env.STATIC_PHP_CLI_VERSION }}" https://github.com/crazywhalecc/static-php-cli.git
+          git clone --depth 1 https://github.com/crazywhalecc/static-php-cli.git
           cd static-php-cli
-          composer update --no-dev
+          composer install --no-dev --no-interaction --prefer-dist
 
-      - name: "Configure webview extension"
+      - name: "Configure StaticPHP v3"
         working-directory: static-php-cli
         run: |
-          if [ ! -f config/ext.json ]; then
-            echo '{}' > config/ext.json
+          SAPI=""
+          if [ "${{ inputs.build-cli }}" = "true" ]; then
+            SAPI="${SAPI:+$SAPI,}cli"
           fi
-          cat config/ext.json | jq '. + {
-            "webview": {
-              "type": "external",
-              "source": "webview",
-              "frameworks": ["WebKit"],
-              "cpp-extension": true
-            }
-          }' > config/ext.json.tmp && mv config/ext.json.tmp config/ext.json
-
-          if [ ! -f config/source.json ]; then
-            echo '{}' > config/source.json
+          if [ "${{ inputs.build-micro }}" = "true" ]; then
+            SAPI="${SAPI:+$SAPI,}micro"
           fi
-
-          CURRENT_REF="${{ github.ref_name }}"
-          cat config/source.json | jq --arg ref "$CURRENT_REF" '. + {
-            "webview": {
-              "type": "git",
-              "path": "php-src/ext/webview",
-              "rev": $ref,
-              "url": "https://github.com/happystraw/php-ext-webview",
-              "license": {
-                "type": "file",
-                "path": "LICENSE"
-              }
-            }
-          }' > config/source.json.tmp && mv config/source.json.tmp config/source.json
+          if [ -z "$SAPI" ]; then
+            echo "At least one SAPI must be enabled" >&2
+            exit 1
+          fi
+          ../scripts/configure-spc-v3-webview.sh
+          ../scripts/configure-spc-v3-craft.sh \
+            --php-version "${{ inputs.php-version }}" \
+            --extensions "${{ inputs.extensions }}" \
+            --packages "${{ inputs.extra-libs }}" \
+            --sapi "${SAPI}" \
+            --debug "${{ inputs.debug }}" \
+            --no-strip "${{ inputs.no-strip }}" \
+            --enable-zts "${{ inputs.enable-zts }}"
 
       - name: "Generate cache key"
         run: echo "EXTENSIONS_KEY=$(echo '${{ inputs.extensions }}' | tr ',' '-')" >> "$GITHUB_ENV"
@@ -117,49 +107,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: static-php-cli/downloads
-          key: php-dependencies-${{ inputs.os }}-${{ inputs.php-version }}-${{ env.EXTENSIONS_KEY }}
+          key: php-dependencies-v3-${{ inputs.os }}-${{ inputs.php-version }}-${{ env.EXTENSIONS_KEY }}
 
-      - name: "Download sources"
+      - name: "Craft build"
         working-directory: static-php-cli
-        run: |
-          DOWN_CMD="./bin/spc download --with-php=${{ inputs.php-version }} --for-extensions=${{ inputs.extensions }} --ignore-cache-sources=php-src --prefer-pre-built"
-          if [ -n "${{ inputs.extra-libs }}" ]; then
-            DOWN_CMD="$DOWN_CMD --for-libs=${{ inputs.extra-libs }}"
-          fi
-          if [ "${{ inputs.debug }}" == "true" ]; then
-            DOWN_CMD="$DOWN_CMD --debug"
-          fi
-          eval "$DOWN_CMD"
-
-      - name: "Run doctor"
-        working-directory: static-php-cli
-        run: |
-          FIX_CMD="./bin/spc doctor --auto-fix"
-          if [ "${{ inputs.debug }}" == "true" ]; then
-            FIX_CMD="$FIX_CMD --debug"
-          fi
-          eval "$FIX_CMD"
-
-      - name: "Build PHP"
-        working-directory: static-php-cli
-        run: |
-          BUILD_CMD="./bin/spc build ${{ inputs.extensions }}"
-          if [ -n "${{ inputs.extra-libs }}" ]; then
-            BUILD_CMD="$BUILD_CMD --with-libs=${{ inputs.extra-libs }}"
-          fi
-          if [ "${{ inputs.debug }}" == "true" ]; then
-            BUILD_CMD="$BUILD_CMD --debug"
-          fi
-          if [ "${{ inputs.build-cli }}" == "true" ]; then
-            BUILD_CMD="$BUILD_CMD --build-cli"
-          fi
-          if [ "${{ inputs.build-micro }}" == "true" ]; then
-            BUILD_CMD="$BUILD_CMD --build-micro"
-          fi
-          if [ "${{ inputs.enable-zts }}" == "true" ]; then
-            BUILD_CMD="$BUILD_CMD --enable-zts"
-          fi
-          eval "$BUILD_CMD"
+        run: ./bin/spc craft craft.yml
 
       - if: ${{ inputs.build-cli == true }}
         name: "Upload PHP cli SAPI"
@@ -185,6 +137,4 @@ jobs:
         name: "Upload Build metadata"
         with:
           name: build-meta-${{ inputs.php-version }}-${{ inputs.os }}
-          path: |
-            static-php-cli/buildroot/build-extensions.json
-            static-php-cli/buildroot/build-libraries.json
+          path: static-php-cli/buildroot/.build.json

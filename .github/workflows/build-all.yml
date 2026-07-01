@@ -18,7 +18,6 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  STATIC_PHP_CLI_VERSION: "2.8.5"
 
 jobs:
   build:
@@ -30,32 +29,38 @@ jobs:
           - os: linux-x86_64
             runs-on: ubuntu-22.04
             os_family: linux
-            upx: true
+            sapi: "cli,micro"
+            upx: false
             extensions: "webview,bz2,ctype,curl,dom,ffi,filter,iconv,mbstring,zlib,openssl,phar,sockets,swow,tokenizer,xml,xmlreader,xmlwriter,zip"
           - os: linux-aarch64
             runs-on: ubuntu-22.04-arm
             os_family: linux
-            upx: true
+            sapi: "cli,micro"
+            upx: false
             extensions: "webview,bz2,ctype,curl,dom,ffi,filter,iconv,mbstring,zlib,openssl,phar,sockets,swow,tokenizer,xml,xmlreader,xmlwriter,zip"
           - os: macos-x86_64
             runs-on: macos-15-intel
             os_family: macos
+            sapi: "cli,micro"
             upx: false
             extensions: "webview,zlib,openssl,curl,swow,ctype,dom,filter,iconv,xml,xmlreader,xmlwriter,mbstring,pcntl,phar,posix,sockets,tokenizer,zip"
           - os: macos-aarch64
             runs-on: macos-15
             os_family: macos
+            sapi: "cli,micro"
             upx: false
             extensions: "webview,zlib,openssl,curl,swow,ctype,dom,filter,iconv,xml,xmlreader,xmlwriter,mbstring,pcntl,phar,posix,sockets,tokenizer,zip"
           - os: windows-x86_64
             runs-on: windows-2022
             os_family: windows
+            sapi: "cli,micro"
             micro_win32: false
             upx: true
             extensions: "webview,bz2,ctype,zlib,openssl,curl,iconv,xml,dom,ffi,filter,mbstring,phar,sockets,swow,tokenizer,xmlreader,xmlwriter,zip"
           - os: windows-x86_64-no-console
             runs-on: windows-2022
             os_family: windows
+            sapi: "micro"
             micro_win32: true
             upx: true
             extensions: "webview,bz2,ctype,zlib,openssl,curl,iconv,xml,dom,ffi,filter,mbstring,phar,sockets,swow,tokenizer,xmlreader,xmlwriter,zip"
@@ -71,91 +76,41 @@ jobs:
           extensions: curl, openssl, mbstring
           ini-values: memory_limit=-1
 
-      - name: "Set build parameters"
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "PHP_VERSION=${{ inputs.php-version }}" >> $GITHUB_ENV
-          else
-            echo "PHP_VERSION=8.5" >> $GITHUB_ENV
-          fi
-          echo "EXTENSIONS=${{ matrix.extensions }}" >> $GITHUB_ENV
-          echo "DEBUG=false" >> $GITHUB_ENV
-
       - name: "Clone static-php-cli"
         run: |
-          git clone --depth 1 --branch "${{ env.STATIC_PHP_CLI_VERSION }}" https://github.com/crazywhalecc/static-php-cli.git
+          git clone --depth 1 https://github.com/crazywhalecc/static-php-cli.git
           cd static-php-cli
-          composer update --no-dev --no-interaction
+          composer install --no-dev --no-interaction --prefer-dist
 
-      - name: "Patch curl CLI sanity check when swow+curl (Windows)"
-        if: matrix.os_family == 'windows' && contains(matrix.extensions, 'swow') && contains(matrix.extensions, 'curl')
-        working-directory: static-php-cli
+      - name: "Configure StaticPHP v3"
         shell: bash
-        run: |
-          cat > /tmp/patch_curl.php << 'PHPEOF'
-          <?php
-          $windows_builder = 'src/SPC/builder/windows/WindowsBuilder.php';
-          $c = file_get_contents($windows_builder);
-          if (!str_contains($c, "Skipping curl CLI sanity check on Windows")) {
-              $needle = '                $ext->runCliCheckWindows();';
-              $replacement = "                if (\$ext->getName() === 'curl') {\n                    logger()->warning('Skipping curl CLI sanity check on Windows');\n                    continue;\n                }\n                \$ext->runCliCheckWindows();";
-              $c = str_replace($needle, $replacement, $c, $count);
-              if ($count !== 1) {
-                  fwrite(STDERR, "Failed to patch curl Windows CLI sanity check\n");
-                  exit(1);
-              }
-              file_put_contents($windows_builder, $c);
-          }
-
-          echo "Patched Windows builder to skip curl CLI sanity check\n";
-          PHPEOF
-          php /tmp/patch_curl.php
-
-      - name: "Configure webview extension"
         working-directory: static-php-cli
-        shell: bash
         run: |
-          if [ ! -f config/ext.json ]; then
-            echo '{}' > config/ext.json
-          fi
-          cat config/ext.json | jq '. + {
-            "webview": {
-              "type": "external",
-              "source": "webview",
-              "frameworks": ["WebKit"],
-              "cpp-extension": true
-            }
-          }' > config/ext.json.tmp && mv config/ext.json.tmp config/ext.json
-
-          if [ ! -f config/source.json ]; then
-            echo '{}' > config/source.json
+          DOWNLOAD_PARALLEL=10
+          if [ "${{ matrix.os_family }}" = "windows" ]; then
+            DOWNLOAD_PARALLEL=1
           fi
 
-          CURRENT_REF="${{ github.ref_name }}"
-          cat config/source.json | jq --arg ref "$CURRENT_REF" '. + {
-            "webview": {
-              "type": "git",
-              "path": "php-src/ext/webview",
-              "rev": $ref,
-              "url": "https://github.com/happystraw/php-ext-webview",
-              "license": {
-                "type": "file",
-                "path": "LICENSE"
-              }
-            }
-          }' > config/source.json.tmp && mv config/source.json.tmp config/source.json
+          ../scripts/configure-spc-v3-webview.sh
+          ../scripts/configure-spc-v3-craft.sh \
+            --php-version "${{ github.event_name == 'workflow_dispatch' && inputs.php-version || '8.5' }}" \
+            --extensions "${{ matrix.extensions }}" \
+            --sapi "${{ matrix.sapi }}" \
+            --debug false \
+            --enable-micro-win32 "${{ matrix.micro_win32 }}" \
+            --with-upx-pack "${{ matrix.upx }}" \
+            --download-parallel "${DOWNLOAD_PARALLEL}"
 
       - name: "Generate cache key"
         shell: bash
-        run: echo "EXTENSIONS_KEY=$(echo '${{ env.EXTENSIONS }}' | tr ',' '-')" >> "$GITHUB_ENV"
+        run: echo "EXTENSIONS_KEY=$(echo '${{ matrix.extensions }}' | tr ',' '-')" >> "$GITHUB_ENV"
 
       - id: cache-download
         name: "Cache downloaded source"
         uses: actions/cache@v4
         with:
           path: static-php-cli/downloads
-          key: php-dependencies-${{ env.STATIC_PHP_CLI_VERSION }}-${{ matrix.os }}-${{ env.PHP_VERSION }}-${{ env.EXTENSIONS_KEY }}
+          key: php-dependencies-v3-${{ matrix.os }}-${{ github.event_name == 'workflow_dispatch' && inputs.php-version || '8.5' }}-${{ env.EXTENSIONS_KEY }}
 
       - name: "Setup (Linux)"
         if: matrix.os_family == 'linux'
@@ -169,92 +124,46 @@ jobs:
 
           echo "SPC_TARGET=native-native" >> $GITHUB_ENV
 
-          if [[ "${{ env.EXTENSIONS }}" == *"webview"* ]]; then
+          if [[ "${{ matrix.extensions }}" == *"webview"* ]]; then
             echo "SPC_EXTRA_LIBS=$(pkg-config --libs gtk+-3.0 webkit2gtk-4.1)" >> $GITHUB_ENV
             echo "PKG_CONFIG_PATH=${EXT_WEBVIEW_DEPS_PC_DIR}" >> $GITHUB_ENV
           fi
 
-          ./bin/spc install-pkg zig
-
-      - name: "Run doctor"
-        shell: bash
+      - name: "Autofix build environment (Windows)"
+        if: matrix.os_family == 'windows'
         working-directory: static-php-cli
-        run: |
-          FIX_CMD="./bin/spc doctor --auto-fix"
-          if [ "${{ env.DEBUG }}" == "true" ]; then
-            FIX_CMD="$FIX_CMD --debug"
-          fi
-          eval "$FIX_CMD"
+        run: ./bin/spc doctor --auto-fix
 
-      - name: "Download sources"
-        shell: bash
+      - name: "Craft build"
         working-directory: static-php-cli
-        run: |
-          DOWN_CMD="./bin/spc download --with-php=${{ env.PHP_VERSION }} --for-extensions=${{ env.EXTENSIONS }} --prefer-pre-built"
-          if [ "${{ matrix.os_family }}" != "windows" ]; then
-            DOWN_CMD="$DOWN_CMD --ignore-cache-sources=php-src"
-          fi
-          if [ "${{ env.DEBUG }}" == "true" ]; then
-            DOWN_CMD="$DOWN_CMD --debug"
-          fi
-          eval "$DOWN_CMD"
-          if [ "${{ matrix.upx }}" == "true" ]; then
-            ./bin/spc install-pkg upx
-          fi
-
-      - name: "Build zlib (Linux)"
-        if: matrix.os_family == 'linux'
-        working-directory: static-php-cli
-        run: |
-          ./bin/spc download zlib --for-libs=zlib
-          ./bin/spc build:libs zlib -r
-
-      - name: "Set build flags"
-        shell: bash
-        run: |
-          FLAGS="--build-micro"
-          if [ "${{ matrix.micro_win32 }}" == "true" ]; then
-            FLAGS="$FLAGS --enable-micro-win32"
-          else
-            FLAGS="$FLAGS --build-cli"
-          fi
-          if [ "${{ matrix.upx }}" == "true" ]; then
-            FLAGS="$FLAGS --with-upx-pack"
-          fi
-          echo "SPC_BUILD_FLAGS=$FLAGS" >> $GITHUB_ENV
-
-      - name: "Build PHP"
-        working-directory: static-php-cli
-        run: ./bin/spc build "${{ env.EXTENSIONS }}" ${{ env.SPC_BUILD_FLAGS }}
+        run: ./bin/spc craft craft.yml
 
       - name: "Upload PHP cli"
         if: matrix.micro_win32 != true
         uses: actions/upload-artifact@v4
         with:
-          name: php-cli-${{ env.PHP_VERSION }}-${{ matrix.os }}
+          name: php-cli-${{ github.event_name == 'workflow_dispatch' && inputs.php-version || '8.5' }}-${{ matrix.os }}
           path: static-php-cli/buildroot/bin/php${{ matrix.os_family == 'windows' && '.exe' || '' }}
 
       - name: "Upload PHP micro"
         uses: actions/upload-artifact@v4
         with:
-          name: php-micro-${{ env.PHP_VERSION }}-${{ matrix.os }}
+          name: php-micro-${{ github.event_name == 'workflow_dispatch' && inputs.php-version || '8.5' }}-${{ matrix.os }}
           path: static-php-cli/buildroot/bin/micro.sfx
 
       - name: "Upload License files"
         uses: actions/upload-artifact@v4
         if: matrix.micro_win32 != true
         with:
-          name: license-files-${{ env.PHP_VERSION }}-${{ matrix.os }}
+          name: license-files-${{ github.event_name == 'workflow_dispatch' && inputs.php-version || '8.5' }}-${{ matrix.os }}
           path: static-php-cli/buildroot/license/
 
       - name: "Upload Build metadata"
         if: matrix.micro_win32 != true
         uses: actions/upload-artifact@v4
         with:
-          name: build-meta-${{ env.PHP_VERSION }}-${{ matrix.os }}
-          path: |
-            static-php-cli/buildroot/build-extensions.json
-            static-php-cli/buildroot/build-libraries.json
+          name: build-meta-${{ github.event_name == 'workflow_dispatch' && inputs.php-version || '8.5' }}-${{ matrix.os }}
+          path: static-php-cli/buildroot/.build.json
 
   release:
     if: startsWith(github.ref, 'refs/tags/')
